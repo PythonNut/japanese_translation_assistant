@@ -51,6 +51,7 @@ SUDACHI_POS_MAP = {
     "接頭辞": "prefix",
     "形状詞": "classifier",
     "副詞": "adverb",
+    "連体詞": "pre-noun adjectival"
 }
 
 # 4E00    9FEF    http://www.unicode.org/charts/PDF/U4E00.pdf CJK Unified Ideographs
