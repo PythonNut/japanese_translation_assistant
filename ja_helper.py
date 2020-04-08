@@ -21,8 +21,6 @@ from japaneseverbconjugator.src.constants.EnumeratedTypes import (
     Formality,
 )
 
-JMDICT_PATH = Path("edict_unicode.txt")
-
 jvfg = japaneseVerbFormGenerator.JapaneseVerbFormGenerator()
 tokenizer_obj = dictionary.Dictionary().create()
 jmd = Jamdict()
