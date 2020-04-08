@@ -27,14 +27,6 @@ jmd = Jamdict()
 google_translate = googletrans.Translator()
 google_translate.session.mount(googletrans.urls.BASE, requests.adapters.HTTPAdapter())
 
-
-t1 = "うん、今週末と平日が同じいんだって"
-t2 = """何
-
-今学期、日本語の授業を取っているので、私はカナダに行く時にも日本語の授業を取りたい
-
-しもださんは大学に日本語の授業を取ったことがありますか"""
-
 SUDACHI_POS_MAP = {
     "感動詞": "interjection",
     "補助記号": "supplementary symbol",
