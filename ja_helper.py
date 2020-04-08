@@ -298,16 +298,21 @@ def translation_assist(text):
 
     chunks = post_parse(morphs)
 
+    morphemes_seen = set()
+
     for (m, rest, conj) in chunks:
         pos = m.part_of_speech()
+        dform = m.dictionary_form()
+        surface = m.surface() + "".join(aux.surface() for aux in rest)
+        reading = jaconv.kata2hira(m.reading_form()) + "".join(
+            jaconv.kata2hira(aux.reading_form()) for aux in rest
+        )
+
         sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
         if sudachi_pos in ("supplementary symbol", "blank space"):
             continue
 
-        entries = search_morpheme(m)
-
         dform_str = ""
-        dform = m.dictionary_form()
         if dform != m.surface():
             dform_str = f" ({dform})"
 
@@ -315,33 +320,36 @@ def translation_assist(text):
         if conj:
             conj_str = " " + " ".join(conj)
 
-        surface = m.surface() + "".join(aux.surface() for aux in rest)
-        reading = jaconv.kata2hira(m.reading_form()) + "".join(
-            jaconv.kata2hira(aux.reading_form()) for aux in rest
-        )
         reading_str = ""
         if reading != surface:
             reading_str = f" [{reading}]"
         print(f"{surface}{reading_str} {sudachi_pos}{dform_str}{conj_str}")
 
+        seen = (tuple(pos), dform, surface, reading)
+        if seen in morphemes_seen:
+            print("    [see above]")
+            morphemes_seen.add(seen)
+            continue
+
+        entries = search_morpheme(m)
         if not entries:
             print(
-                "     No matches",
+                "    No matches",
                 m.surface(),
                 m.dictionary_form(),
                 m.reading_form(),
                 ", ".join(pos),
             )
-            print(f"     {google(dform)}")
+            print(f"    {google(dform)}")
             print()
 
         for entry, senses in entries:
             if not senses:
-                print("SAD")
+                print("    No senses???")
                 continue
             for i in senses:
                 sense = str(entry.senses[i]).replace("`", "'")
-                print(f"     {sense}")
+                print(f"    {sense}")
             print()
 
 
