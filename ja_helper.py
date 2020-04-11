@@ -41,7 +41,7 @@ SUDACHI_POS_MAP = {
     "接頭辞": "prefix",
     "形状詞": "classifier",
     "副詞": "adverb",
-    "連体詞": "pre-noun adjectival"
+    "連体詞": "pre-noun adjectival",
 }
 
 # 4E00    9FEF    http://www.unicode.org/charts/PDF/U4E00.pdf CJK Unified Ideographs
@@ -71,6 +71,17 @@ def guess_verb_class(pos):
 
     print(f"Unrecognized verb: {m.surface()} {pos}")
     return
+
+
+def morpheme_to_str(m: morpheme.Morpheme):
+    surface = m.surface()
+    dform = m.dictionary_form()
+    pos = m.part_of_speech()
+    return f"Morpheme({repr(surface)}, dform={repr(dform)}, pos={repr(pos)})"
+
+
+morpheme.Morpheme.__str__ = morpheme_to_str
+morpheme.Morpheme.__repr__ = morpheme_to_str
 
 
 def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
