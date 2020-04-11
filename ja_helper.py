@@ -324,6 +324,7 @@ def translation_assist(text):
 
             if reading == "きごう":
                 match_reading = False
+                reading = None
 
         dform_str = ""
         if dform != m.surface():
@@ -334,7 +335,7 @@ def translation_assist(text):
             conj_str = " " + " ".join(conj)
 
         reading_str = ""
-        if reading != surface:
+        if reading and reading != surface:
             reading_str = f" [{reading}]"
         print(f"{surface}{reading_str} {sudachi_pos}{dform_str}{conj_str}")
 
