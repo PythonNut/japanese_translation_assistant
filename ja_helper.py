@@ -55,6 +55,7 @@ SUDACHI_POS_MAP = {
 kanji_re = "[\u4E00-\u9FEF\u3400-\u4DBF\U00020000-\U0002A6DF\U0002A700-\U0002B73F\U0002B740-\U0002B81F\U0002B820-\U0002CEAF\U0002CEB0-\U0002EBEF]"
 hira_re = "[\u3040-\u309F]"
 kata_re = "[\u30A0-\u30FF]"
+alphanum_re = "[\uFF01-\uFF5E]"
 
 
 def google(text):
@@ -104,7 +105,9 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
         return j_pos.startswith(s_base_pos)
 
 
-def search_morpheme(m: morpheme.Morpheme) -> Tuple[List[jmdict.JMDEntry], List[int]]:
+def search_morpheme(
+    m: morpheme.Morpheme, match_reading=True
+) -> Tuple[List[jmdict.JMDEntry], List[int]]:
     pos = m.part_of_speech()
     has_kanji = re.search(kanji_re, m.surface())
     ids = set()
@@ -120,7 +123,7 @@ def search_morpheme(m: morpheme.Morpheme) -> Tuple[List[jmdict.JMDEntry], List[i
     matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
     reading_matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
     for entry in entries:
-        if not any(
+        if match_reading and not any(
             jaconv.hira2kata(r.text) in (reading, dict_reading)
             for r in entry.kana_forms
         ):
@@ -310,8 +313,17 @@ def translation_assist(text):
         )
 
         sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
-        if sudachi_pos in ("supplementary symbol", "blank space"):
+        if sudachi_pos == "blank space":
             continue
+
+        match_reading = True
+        if sudachi_pos == "supplementary symbol":
+            entries = jmd.lookup(dform).entries
+            if re.match(f"{alphanum_re}+", surface) or not entries:
+                continue
+
+            if reading == "きごう":
+                match_reading = False
 
         dform_str = ""
         if dform != m.surface():
@@ -332,7 +344,7 @@ def translation_assist(text):
             continue
         morphemes_seen.add(seen)
 
-        entries = search_morpheme(m)
+        entries = search_morpheme(m, match_reading=match_reading)
         if not entries:
             print(
                 "    No matches",
