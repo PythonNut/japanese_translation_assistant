@@ -328,9 +328,9 @@ def translation_assist(text):
 
         seen = (tuple(pos), dform, surface, reading)
         if seen in morphemes_seen:
-            print("    [see above]")
-            morphemes_seen.add(seen)
+            print("    [see above]\n")
             continue
+        morphemes_seen.add(seen)
 
         entries = search_morpheme(m)
         if not entries:
