@@ -97,10 +97,8 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
             return "verb" in j_pos and j_pos.endswith("irregular")
 
         return "verb" in j_pos
-    # if s_base_pos == "noun":
-    #     if j_pos == "counter":
-    #         return True
-    #     return j_pos.startswith(s_base_pos)
+    elif s_base_pos == "auxiliary verb":
+        return not j_pos.startswith('noun')
     else:
         return j_pos.startswith(s_base_pos)
 
