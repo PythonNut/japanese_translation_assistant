@@ -112,7 +112,7 @@ def search_morpheme(
     entries: List[jmdict.JMDEntry] = []
     reading = m.reading_form()
     dict_reading = parse(m.dictionary_form())[0].reading_form()
-    for search in (m.dictionary_form(),):
+    for search in set((m.dictionary_form(), m.normalized_form())):
         for entry in jmd.lookup(search).entries:
             if entry.idseq not in ids:
                 ids.add(entry.idseq)
