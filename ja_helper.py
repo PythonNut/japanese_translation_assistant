@@ -91,18 +91,23 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
         vclass = guess_verb_class(s_pos)
         if vclass == VerbClass.GODAN:
             return j_pos.startswith("Godan verb")
+
         elif vclass == VerbClass.ICHIDAN:
             return j_pos.startswith("Ichidan verb")
+
         elif vclass == VerbClass.IRREGULAR:
-            return "verb" in j_pos and (
-                j_pos.endswith("irregular")
-                or j_pos.startswith("Kuru verb")
-                or j_pos.startswith("suru verb")
-            )
+            if s_pos[4] == "サ行変格":
+                return j_pos.startswith("suru verb")
+
+            elif s_pos[4] == "カ行変格":
+                return j_pos.startswith("Kuru verb")
+
+            return j_pos.endswith("irregular")
 
         return "verb" in j_pos
     elif s_base_pos == "auxiliary verb":
         return not j_pos.startswith("noun")
+
     else:
         return j_pos.startswith(s_base_pos)
 
