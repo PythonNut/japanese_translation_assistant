@@ -94,11 +94,15 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
         elif vclass == VerbClass.ICHIDAN:
             return j_pos.startswith("Ichidan verb")
         elif vclass == VerbClass.IRREGULAR:
-            return "verb" in j_pos and j_pos.endswith("irregular")
+            return "verb" in j_pos and (
+                j_pos.endswith("irregular")
+                or j_pos.startswith("Kuru verb")
+                or j_pos.startswith("suru verb")
+            )
 
         return "verb" in j_pos
     elif s_base_pos == "auxiliary verb":
-        return not j_pos.startswith('noun')
+        return not j_pos.startswith("noun")
     else:
         return j_pos.startswith(s_base_pos)
 
@@ -174,7 +178,7 @@ def all_verb_conjugations(verb, verb_class, sort_keys=False):
     # This is a terrible hack because JVC doesn't support 来る
     if verb == "来る" and verb_class == VerbClass.IRREGULAR:
         kana_conj = all_verb_conjugations("くる", VerbClass.IRREGULAR, sort_keys)
-        return {k:"来" + v[1:] if v else None for k, v in kana_conj.items()}
+        return {k: "来" + v[1:] if v else None for k, v in kana_conj.items()}
 
     result = {}
     polarities = [(Polarity.POSITIVE, "positive"), (Polarity.NEGATIVE, "negative")]
