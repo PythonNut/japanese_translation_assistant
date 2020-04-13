@@ -170,10 +170,10 @@ def i_adj_short_form(dict_form, tense, polarity):
             return dict_form
 
 
-def all_verb_conjugations(verb, verb_class):
+def all_verb_conjugations(verb, verb_class, sort_keys=False):
     # This is a terrible hack because JVC doesn't support 来る
     if verb == "来る" and verb_class == VerbClass.IRREGULAR:
-        kana_conj = all_verb_conjugations("くる", VerbClass.IRREGULAR)
+        kana_conj = all_verb_conjugations("くる", VerbClass.IRREGULAR, sort_keys)
         return {k:"来" + v[1:] if v else None for k, v in kana_conj.items()}
 
     result = {}
@@ -242,6 +242,9 @@ def all_verb_conjugations(verb, verb_class):
     if provisional_neg_plain and provisional_neg_plain.endswith("なければ"):
         result["provisional_plain2_negative"] = provisional_neg_plain[:-4] + "なきゃ"
         result["provisional_plain3_negative"] = provisional_neg_plain[:-4] + "なくちゃ"
+
+    if sort_keys:
+        result = {k: v for k, v in sorted(result.items())}
 
     return result
 
