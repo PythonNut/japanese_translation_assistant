@@ -297,7 +297,7 @@ def post_parse(morphs: List[morpheme.Morpheme]):
 
 
 def parse(text):
-    mode = tokenizer.Tokenizer.SplitMode.A
+    mode = tokenizer.Tokenizer.SplitMode.B
     return list(tokenizer_obj.tokenize(text, mode))
 
 
