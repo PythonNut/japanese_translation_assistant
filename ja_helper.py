@@ -191,6 +191,11 @@ def all_verb_conjugations(verb, verb_class, sort_keys=False):
     tenses = [(Tense.PAST, "past"), (Tense.NONPAST, "nonpast")]
 
     te = jvfg.generate_te_form(verb, verb_class)
+
+    # Handle the 行く irregularity
+    if verb == "行く" and verb_class == VerbClass.GODAN:
+        te = "行って"
+
     result["te"] = te
 
     polite = jvfg.generate_polite_form(
