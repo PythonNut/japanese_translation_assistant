@@ -171,6 +171,11 @@ def i_adj_short_form(dict_form, tense, polarity):
 
 
 def all_verb_conjugations(verb, verb_class):
+    # This is a terrible hack because JVC doesn't support 来る
+    if verb == "来る" and verb_class == VerbClass.IRREGULAR:
+        kana_conj = all_verb_conjugations("くる", VerbClass.IRREGULAR)
+        return {k:"来" + v[1:] if v else None for k, v in kana_conj.items()}
+
     result = {}
     polarities = [(Polarity.POSITIVE, "positive"), (Polarity.NEGATIVE, "negative")]
     formalities = [(Formality.POLITE, "polite"), (Formality.PLAIN, "plain")]
