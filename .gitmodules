@@ -1,0 +1,3 @@
+[submodule "jconj"]
+	path = jconj
+	url = git@github.com:PythonNut/jconj.git

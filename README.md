@@ -23,7 +23,7 @@ I've been listening since I was little and recently found this song flowing in m
     far away/long ago
     direct/straight
 
-聞いて [きいて] verb (聞く) te
+聞いて [きいて] verb (聞く) conjunctive_plain_pos
     to hear ((Godan verb with 'ku' ending|transitive verb))
     to listen (e.g. to music)
     to ask/to enquire/to query
@@ -108,7 +108,7 @@ I've been listening since I was little and recently found this song flowing in m
     indicates time of action
     indicates means of action/cause of effect/by
 
-流れて [ながれて] verb (流れる) te
+流れて [ながれて] verb (流れる) conjunctive_plain_pos
     to stream/to flow (liquid, time, etc.)/to run (ink) ((Ichidan verb|intransitive verb))
     to be washed away/to be carried
     to drift/to float (e.g. clouds)/to wander/to stray
@@ -123,7 +123,7 @@ I've been listening since I was little and recently found this song flowing in m
     at last/at length ((adverb (fukushi)))
     barely/narrowly/just/by the skin of one's teeth
 
-見つけました [みつけました] verb (見つける) polite_past_positive
+見つけました [みつけました] verb (見つける) past_polite_pos
     to discover/to find (e.g. an error in a book)/to come across/to detect/to spot ((Ichidan verb|transitive verb))
     to locate/to find (e.g. something missing)/to find fault
     to be used to seeing/to be familiar with

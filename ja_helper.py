@@ -20,6 +20,10 @@ from japaneseverbconjugator.src.constants.EnumeratedTypes import (
     Polarity,
     Formality,
 )
+import jconj.conj as jconj
+
+CT = jconj.read_conj_tables("./jconj/data")
+JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
 
 jvfg = japaneseVerbFormGenerator.JapaneseVerbFormGenerator()
 tokenizer_obj = dictionary.Dictionary().create()
@@ -179,6 +183,129 @@ def i_adj_short_form(dict_form, tense, polarity):
             return dict_form
 
 
+def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
+    s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
+    if s_base_pos == "verb":
+        vclass = guess_verb_class(s_pos)
+        if vclass == VerbClass.GODAN:
+            return j_pos.startswith("v5")
+
+        elif vclass == VerbClass.ICHIDAN:
+            return j_pos.startswith("v1")
+
+        elif vclass == VerbClass.IRREGULAR:
+            if s_pos[4] == "サ行変格":
+                return j_pos == "vs-i"
+
+            elif s_pos[4] == "カ行変格":
+                return j_pos == "vk"
+
+        return "verb" in j_pos
+
+    elif s_base_pos == "noun":
+        return j_pos == "n" or j_pos.startswith("n-")
+
+    elif s_base_pos == "adjective":
+        return j_pos.startswith("adj")
+
+
+def guess_exact_pos(m: morpheme.Morpheme):
+    dict_form = m.dictionary_form()
+    entries = jmd.lookup(dict_form).entries
+    pos = m.part_of_speech()
+    pos_strs = {p for e in entries for s in e.senses for p in s.pos}
+    pos_abbrevs = [a for p in pos_strs if (a := JMDICT_ABBREV_MAP.get(p))]
+    pos_matches = [
+        p
+        for p in pos_abbrevs
+        if CT["kwpos"][p][0] in [x[0] for x in CT["conjo"]]
+        and sudachi_jmdict_abbrev_match(pos, p)
+    ]
+
+    return pos_matches
+
+
+def all_conjugations(m: morpheme.Morpheme):
+    dict_form = m.dictionary_form()
+    pos_matches = guess_exact_pos(m)
+    result = {}
+
+    for pos_match in pos_matches:
+        result[pos_match], _ = all_conjugations_helper(dict_form, pos_match)
+
+    return result
+
+
+def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
+    pos = CT["kwpos"][pos_match][0]
+    has_kanji = re.search(kanji_re, dict_form)
+
+    if has_kanji:
+        kanji, kana = dict_form, None
+    else:
+        kanji, kana = None, dict_form
+
+    conjs = jconj.conjugate(kanji, kana, pos, CT)
+
+    entry, ref_map = {}, {}
+    for (_, case, neg, pol, _), v in conjs.items():
+        if cases and case not in cases:
+            continue
+        neg_str = "neg" if neg else "pos"
+        pol_str = "polite" if pol else "plain"
+        type_str = CT["conj"][case][1].lower().split(" ")[0]
+        key = f"{type_str}_{pol_str}_{neg_str}"
+        entry.setdefault(key, []).append(v)
+        ref_map.setdefault((case, neg, pol), key)
+
+    if pos_match.startswith("v") and (not cases or 4 in cases):
+        prov_neg_plains = entry[ref_map[4, True, False]]
+        for prov_neg_plain in list(prov_neg_plains):
+            if prov_neg_plain.endswith("なければ"):
+                prov_neg_plains.extend(
+                    (prov_neg_plain[:-4] + "なきゃ", prov_neg_plain[:-4] + "なくちゃ")
+                )
+
+    if pos_match.startswith("v") and (not cases or 14 in cases):
+        plain_pos_pol = entry[ref_map[1, False, True]]
+        assert len(plain_pos_pol) == 1
+        renyoukei = plain_pos_pol[0][:-2]
+        tai = renyoukei + "たい"
+
+        tai_entry, tai_ref = all_conjugations_helper(tai, "adj-i")
+        tai_reverse = {v: k for k, v in tai_ref.items()}
+        tai_entry[tai_ref[1, False, False]].extend((renyoukei + "てぇ", renyoukei + "てー"))
+
+        for k, v in tai_entry.items():
+            key = f"tai_{k}"
+            entry[key] = v
+            ref_map[(14, *tai_reverse[k])] = key
+
+        tai3 = renyoukei + "たがっている"
+        # The same set of conjugations as an adjective
+        # TODO: Actually determine which conjugations are allowed here
+        tai3_entry, tai3_ref = all_conjugations_helper(
+            tai3, "v1", {1, 2, 3, 4, 7, 9, 12, 13}
+        )
+        tai3_reverse = {v: k for k, v in tai3_ref.items()}
+
+        for k, v in tai3_entry.items():
+            key = f"tai3_{k}"
+            entry[key] = v
+            ref_map[(14, *tai3_reverse[k])] = key
+
+    if pos_match.startswith("v") and (not cases or 15 in cases):
+        tes = entry[ref_map[3, False, False]]
+        assert len(tes) == 1
+        progressive = tes[0] + "いる"
+        prog_entry, _ = all_conjugations_helper(progressive, "v1", {1, 2})
+
+        for k, v in prog_entry.items():
+            entry[f"progressive_{k}"] = v
+
+    return entry, ref_map
+
+
 def all_verb_conjugations(verb, verb_class, sort_keys=False):
     # This is a terrible hack because JVC doesn't support 来る
     if verb == "来る" and verb_class == VerbClass.IRREGULAR:
@@ -270,6 +397,22 @@ def flip_dict(d):
     return result
 
 
+def flip_multi_dict(d):
+    result = {}
+    for k, vs in d.items():
+        for v in vs:
+            result.setdefault(v, []).append(k)
+    return result
+
+
+def merge_multi_dicts(*ds):
+    result = {}
+    for d in ds:
+        for k, v in d.items():
+            result.setdefault(k, []).extend(v)
+    return result
+
+
 def post_parse(morphs: List[morpheme.Morpheme]):
     morphs.reverse()
     result = []
@@ -278,32 +421,41 @@ def post_parse(morphs: List[morpheme.Morpheme]):
         pos = m.part_of_speech()
         sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "")
 
-        if sudachi_pos == "verb":
-            vclass = guess_verb_class(m.part_of_speech())
-            if vclass:
-                conj_map = flip_dict(all_verb_conjugations(m.dictionary_form(), vclass))
+        if sudachi_pos in ("verb", "adjective"):
+            conj_map = merge_multi_dicts(
+                *[flip_multi_dict(m) for m in all_conjugations(m).values()]
+            )
+            # conj_map = flip_dict(all_verb_conjugations(m.dictionary_form(), vclass))
 
-                limit = 0
-                while len(morphs) > limit and SUDACHI_POS_MAP.get(
-                    morphs[-limit - 1].part_of_speech()[0]
-                ) in ("auxiliary verb", "particle", "verb"):
-                    limit += 1
+            limit = 0
+            extenders = []
+            if sudachi_pos == "verb":
+                extenders = ("auxiliary verb", "particle", "verb")
+            elif sudachi_pos == "adjective":
+                extenders = ("adjective", "auxiliary verb")
 
-                conj = None
-                num = 0
-                for l in range(limit, 0, -1):
-                    suffix = morphs[-1 : -l - 1 : -1]
-                    cand = m.surface() + "".join(aux.surface() for aux in suffix)
-                    if cand in conj_map:
-                        conj = conj_map[cand]
-                        num = l
-                        break
+            while (
+                len(morphs) > limit
+                and SUDACHI_POS_MAP.get(morphs[-limit - 1].part_of_speech()[0])
+                in extenders
+            ):
+                limit += 1
 
-                if conj:
-                    result.append((m, morphs[-1 : -num - 1 : -1], conj))
-                    for _ in range(num):
-                        morphs.pop()
-                    continue
+            conj = None
+            num = 0
+            for l in range(limit, 0, -1):
+                suffix = morphs[-1 : -l - 1 : -1]
+                cand = m.surface() + "".join(aux.surface() for aux in suffix)
+                if cand in conj_map:
+                    conj = conj_map[cand]
+                    num = l
+                    break
+
+            if conj:
+                result.append((m, morphs[-1 : -num - 1 : -1], conj))
+                for _ in range(num):
+                    morphs.pop()
+                continue
 
         result.append((m, [], None))
 
