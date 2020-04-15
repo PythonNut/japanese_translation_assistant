@@ -195,7 +195,7 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
 
         elif vclass == VerbClass.IRREGULAR:
             if s_pos[4] == "サ行変格":
-                return j_pos == "vs-i"
+                return j_pos in ("vs-i", "vs-s")
 
             elif s_pos[4] == "カ行変格":
                 return j_pos == "vk"
