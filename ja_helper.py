@@ -225,13 +225,17 @@ def guess_exact_pos(m: morpheme.Morpheme):
     return pos_matches
 
 
-def all_conjugations(m: morpheme.Morpheme):
+def all_conjugations(m: morpheme.Morpheme, refs=False):
     dict_form = m.dictionary_form()
     pos_matches = guess_exact_pos(m)
     result = {}
 
     for pos_match in pos_matches:
-        result[pos_match], _ = all_conjugations_helper(dict_form, pos_match)
+        conjugations, ref_map = all_conjugations_helper(dict_form, pos_match)
+        if refs:
+            result[pos_match] = conjugations, ref_map
+        else:
+            result[pos_match] = conjugations
 
     return result
 
