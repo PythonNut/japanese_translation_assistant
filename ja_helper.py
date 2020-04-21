@@ -11,21 +11,12 @@ from pathlib import Path
 from typing import List, Tuple, Set
 from sudachipy import tokenizer, dictionary, morpheme
 from jamdict import Jamdict, jmdict
-from japaneseverbconjugator.src import (
-    JapaneseVerbFormGenerator as japaneseVerbFormGenerator,
-)
-from japaneseverbconjugator.src.constants.EnumeratedTypes import (
-    VerbClass,
-    Tense,
-    Polarity,
-    Formality,
-)
+from japaneseverbconjugator.src.constants.EnumeratedTypes import VerbClass
 import jconj.conj as jconj
 
 CT = jconj.read_conj_tables("./jconj/data")
 JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
 
-jvfg = japaneseVerbFormGenerator.JapaneseVerbFormGenerator()
 tokenizer_obj = dictionary.Dictionary().create()
 jmd = Jamdict()
 google_translate = googletrans.Translator()
@@ -170,19 +161,6 @@ def search_morpheme(
     return matches
 
 
-def i_adj_short_form(dict_form, tense, polarity):
-    if tense == Tense.PAST:
-        if polarity == Polarity.NEGATIVE:
-            return dict_form[:-1] + "くなかった"
-        else:
-            return dict_form[:-1] + "かった"
-    else:
-        if polarity == Polarity.NEGATIVE:
-            return dict_form[:-1] + "くない"
-        else:
-            return dict_form
-
-
 def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
     if s_base_pos == "verb":
@@ -313,99 +291,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         entry[ref_map[15, 1, False, False]].append(tes[0] + "る")
         entry[ref_map[15, 2, False, False]].append(tes[0] + "た")
 
-
     return entry, ref_map
-
-
-def all_verb_conjugations(verb, verb_class, sort_keys=False):
-    # This is a terrible hack because JVC doesn't support 来る
-    if verb == "来る" and verb_class == VerbClass.IRREGULAR:
-        kana_conj = all_verb_conjugations("くる", VerbClass.IRREGULAR, sort_keys)
-        return {k: "来" + v[1:] if v else None for k, v in kana_conj.items()}
-
-    result = {}
-    polarities = [(Polarity.POSITIVE, "positive"), (Polarity.NEGATIVE, "negative")]
-    formalities = [(Formality.POLITE, "polite"), (Formality.PLAIN, "plain")]
-    tenses = [(Tense.PAST, "past"), (Tense.NONPAST, "nonpast")]
-
-    te = jvfg.generate_te_form(verb, verb_class)
-
-    # Handle the 行く irregularity
-    if verb == "行く" and verb_class == VerbClass.GODAN:
-        te = "行って"
-
-    result["te"] = te
-
-    polite = jvfg.generate_polite_form(
-        verb, verb_class, Tense.NONPAST, Polarity.POSITIVE
-    )
-    assert polite.endswith("ます")
-    stem = polite[:-2]
-    tai = stem + "たい"
-    tai3 = stem + "たがっている"
-    progressive = te + "いる"
-    result["progressive_plain"] = progressive
-
-    for (t_o, t_s), (p_o, p_s) in itertools.product(tenses, polarities):
-        result[f"plain_{t_s}_{p_s}"] = jvfg.generate_plain_form(
-            verb, verb_class, t_o, p_o
-        )
-        result[f"polite_{t_s}_{p_s}"] = jvfg.generate_polite_form(
-            verb, verb_class, t_o, p_o
-        )
-
-        result[f"tai_{t_s}_{p_s}"] = i_adj_short_form(tai, t_o, p_o)
-        result[f"tai_3rd_plain_{t_s}_{p_s}"] = jvfg.generate_plain_form(
-            tai3, VerbClass.ICHIDAN, t_o, p_o
-        )
-        result[f"tai_3rd_polite_{t_s}_{p_s}"] = jvfg.generate_polite_form(
-            tai3, VerbClass.ICHIDAN, t_o, p_o
-        )
-
-        result[f"progressive_polite_{t_s}_{p_s}"] = jvfg.generate_polite_form(
-            progressive, VerbClass.ICHIDAN, t_o, p_o
-        )
-
-    for (f_o, f_s), (p_o, p_s) in itertools.product(formalities, polarities):
-        result[f"conditional_{p_s}_{f_s}"] = jvfg.generate_conditional_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"volitional_{p_s}_{f_s}"] = jvfg.generate_volitional_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"potential_{p_s}_{f_s}"] = jvfg.generate_potential_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"imperative_{p_s}_{f_s}"] = jvfg.generate_imperative_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"provisional_{p_s}_{f_s}"] = jvfg.generate_provisional_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"causative_{p_s}_{f_s}"] = jvfg.generate_causative_form(
-            verb, verb_class, f_o, p_o
-        )
-        result[f"passive_{p_s}_{f_s}"] = jvfg.generate_passive_form(
-            verb, verb_class, f_o, p_o
-        )
-
-    # Compute alternate plain forms for the negative provisional
-    provisional_neg_plain = result["provisional_negative_plain"]
-    if provisional_neg_plain and provisional_neg_plain.endswith("なければ"):
-        result["provisional_plain2_negative"] = provisional_neg_plain[:-4] + "なきゃ"
-        result["provisional_plain3_negative"] = provisional_neg_plain[:-4] + "なくちゃ"
-
-    if sort_keys:
-        result = {k: v for k, v in sorted(result.items())}
-
-    return result
-
-
-def flip_dict(d):
-    result = {}
-    for k, v in d.items():
-        result.setdefault(v, []).append(k)
-    return result
 
 
 def flip_multi_dict(d):
@@ -436,7 +322,6 @@ def post_parse(morphs: List[morpheme.Morpheme]):
             conj_map = merge_multi_dicts(
                 *[flip_multi_dict(m) for m in all_conjugations(m).values()]
             )
-            # conj_map = flip_dict(all_verb_conjugations(m.dictionary_form(), vclass))
 
             limit = 0
             extenders = []
