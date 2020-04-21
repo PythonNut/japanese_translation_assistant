@@ -298,10 +298,17 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         tes = entry[ref_map[3, False, False]]
         assert len(tes) == 1
         progressive = tes[0] + "いる"
-        prog_entry, _ = all_conjugations_helper(progressive, "v1", {1, 2})
+        prog_entry, prog_ref = all_conjugations_helper(progressive, "v1", {1, 2})
+        prog_reverse = {v: k for k, v in prog_ref.items()}
 
         for k, v in prog_entry.items():
-            entry[f"progressive_{k}"] = v
+            key = f"progressive_{k}"
+            entry[key] = v
+            ref_map[(15, *prog_reverse[k])] = key
+
+        entry[ref_map[15, 1, False, False]].append(tes[0] + "る")
+        entry[ref_map[15, 2, False, False]].append(tes[0] + "た")
+
 
     return entry, ref_map
 
