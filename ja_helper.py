@@ -238,7 +238,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         type_str = CT["conj"][case][1].lower().split(" ")[0]
         key = f"{type_str}_{pol_str}_{neg_str}"
         entry.setdefault(key, []).append(v)
-        ref_map.setdefault((case, neg, pol), key)
+        ref_map[case, neg, pol] = key
 
     if pos_match.startswith("v") and (not cases or 4 in cases):
         prov_neg_plains = entry[ref_map[4, True, False]]
@@ -393,6 +393,20 @@ def translation_assist(text):
             if reading == "きごう":
                 match_reading = False
                 reading = None
+
+        elif sudachi_pos == "particle" and surface in (
+            "に",
+            "を",
+            "で",
+            "は",
+            "を",
+            "へ",
+            "が",
+            "の",
+            "と",
+        ):
+            print(f"{surface} particle\n")
+            continue
 
         dform_str = ""
         if dform != m.surface():
