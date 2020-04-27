@@ -339,7 +339,7 @@ def post_parse(morphs: List[morpheme.Morpheme]):
 
             conj = None
             num = 0
-            for l in range(limit, 0, -1):
+            for l in range(limit, -1, -1):
                 suffix = morphs[-1 : -l - 1 : -1]
                 cand = m.surface() + "".join(aux.surface() for aux in suffix)
                 if cand in conj_map:
