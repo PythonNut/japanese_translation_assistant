@@ -80,7 +80,7 @@ def google(text):
 
 @functools.lru_cache(maxsize=None)
 def jmdict_lookup(s):
-    return jmd.lookup(s)
+    return jmd.lookup(s, lookup_chars=False)
 
 
 def guess_verb_class(pos):
