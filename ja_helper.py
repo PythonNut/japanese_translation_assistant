@@ -435,13 +435,13 @@ def post_parse(morphemes: List[morpheme.Morpheme]):
             unit_score = unit.score()
 
             if j == n:
-                if unit_score > dp[i][0]:
+                if unit_score >= dp[i][0]:
                     dp[i] = unit_score, [unit]
                 break
 
             rest_score, rest = dp[j]
             score = unit_score + rest_score
-            if rest and score > dp[i][0]:
+            if rest and score >= dp[i][0]:
                 dp[i] = score, [unit] + rest
 
     return dp[0][1]
