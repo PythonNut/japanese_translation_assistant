@@ -14,6 +14,7 @@ import jconj.conj as jconj
 
 CT = jconj.read_conj_tables("./jconj/data")
 JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
+JMDICT_ABBREV_MAP["expressions (phrases, clauses, etc.)"] = "exp"
 
 tokenizer_obj = dictionary.Dictionary().create()
 jmd = Jamdict()
@@ -501,8 +502,16 @@ def translation_assist(text):
                 print("    No senses???")
                 continue
             for i in senses:
-                sense = str(entry.senses[i]).replace("`", "'")
-                print(f"    {sense}")
+                sense = entry.senses[i]
+                pos_str = ""
+                if sense.pos:
+                    pos_str = " ({})".format(
+                        "|".join(JMDICT_ABBREV_MAP.get(p, p) for p in sense.pos)
+                    )
+
+                gloss = sense.text().replace("`", "'")
+
+                print(f"    {gloss}{pos_str}")
             print()
 
 
