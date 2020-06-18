@@ -404,6 +404,13 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
                     (prov_neg_plain[:-4] + "なきゃ", prov_neg_plain[:-4] + "なくちゃ")
                 )
 
+    if pos_match.startswith("v") and (not cases or 6 in cases):
+        passive = entry[ref_map[6, False, False]][0]
+        assert passive.endswith("る")
+        key = "passive_conjunctive_plain_pos"
+        entry[key] = [passive[:-1] + "て"]
+        ref_map[(6, 3, False, False)] = key
+
     if pos_match.startswith("v") and (not cases or 14 in cases):
         plain_pos_pol = entry[ref_map[1, False, True]]
         assert len(plain_pos_pol) == 1
