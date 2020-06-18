@@ -269,7 +269,7 @@ def search_morpheme(
 
 def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
-    if s_base_pos == "verb":
+    if s_base_pos in ("verb", "auxiliary verb"):
         vclass = guess_verb_class(s_pos)
         if vclass == VerbClass.GODAN:
             return j_pos.startswith("v5")
