@@ -115,6 +115,9 @@ class MultiMorpheme(object):
         elif root_pos == "verb":
             if rest_pos.issubset({"auxiliary verb", "particle", "verb"}):
                 return True
+        elif root_pos == "auxiliary verb":
+            if rest_pos.issubset({"auxiliary verb", "verb"}):
+                return True
         elif root_pos == "adjective":
             if rest_pos.issubset({"adjective", "auxiliary verb"}):
                 return True
@@ -146,7 +149,7 @@ class MultiMorpheme(object):
         ]
         root_pos = parts_of_speech[0]
 
-        if root_pos in ("verb", "adjective"):
+        if root_pos in ("verb", "adjective", "auxiliary verb"):
             return self.morphemes[0].part_of_speech()
 
         i = 1
@@ -291,6 +294,9 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
 
 
 def guess_exact_pos(dict_form, pos):
+    if dict_form in ("だ", "です") and pos[4] in ("助動詞-ダ", "助動詞-デス"):
+        return "だ", ["cop-da"]
+
     entries = jmdict_lookup(dict_form).entries
     pos_strs = {p for e in entries for s in e.senses for p in s.pos}
     pos_abbrevs = [a for p in pos_strs if (a := JMDICT_ABBREV_MAP.get(p))]
@@ -301,11 +307,11 @@ def guess_exact_pos(dict_form, pos):
         and sudachi_jmdict_abbrev_match(pos, p)
     ]
 
-    return pos_matches
+    return dict_form, pos_matches
 
 
 def all_conjugations(dict_form, pos, refs=False):
-    pos_matches = guess_exact_pos(dict_form, pos)
+    dict_form, pos_matches = guess_exact_pos(dict_form, pos)
     result = {}
 
     for pos_match in pos_matches:
@@ -390,6 +396,12 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
 
         entry[ref_map[15, 1, False, False]].append(tes[0] + "る")
         entry[ref_map[15, 2, False, False]].append(tes[0] + "た")
+
+    if pos_match == 'cop-da':
+        for k, vs in entry.items():
+            for v in vs:
+                if v.startswith("では"):
+                    entry[k].append("じゃ" + v[2:])
 
     return entry, ref_map
 
