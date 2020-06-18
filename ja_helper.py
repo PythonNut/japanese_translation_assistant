@@ -38,7 +38,7 @@ SUDACHI_POS_MAP = {
     "形状詞": "classifier",
     "副詞": "adverb",
     "連体詞": "pre-noun adjectival",
-    "接続詞": "conjunction"
+    "接続詞": "conjunction",
 }
 
 SUDACHI_POS_REGEX_MAP = {
@@ -142,7 +142,10 @@ class MultiMorpheme(object):
         return [m.part_of_speech() for m in self.morphemes]
 
     def pos_str(self):
-        return ''.join(SUDACHI_POS_REGEX_MAP[SUDACHI_POS_MAP[pos[0]]] for pos in self.parts_of_speech())
+        return "".join(
+            SUDACHI_POS_REGEX_MAP[SUDACHI_POS_MAP[pos[0]]]
+            for pos in self.parts_of_speech()
+        )
 
     def composition_check(self):
         if len(self.morphemes) == 1:
@@ -176,6 +179,18 @@ class MultiMorpheme(object):
             if jmdict_lookup(result).entries:
                 return result
 
+        if (
+            pos[0] == "v"
+            and romkan.to_roma(self.morphemes[0].surface()).endswith("e")
+            and not jmdict_lookup(surface).entries
+        ):
+            suf = romkan.to_hiragana(
+                romkan.to_roma(self.morphemes[0].surface()[-1])[:-1] + "u"
+            )
+            result = self.morphemes[0].surface()[:-1] + suf
+            if jmdict_lookup(result).entries:
+                return result
+
     def dictionary_form(self):
         assert self.composition_check()
         pos = self.pos_str()
@@ -185,8 +200,11 @@ class MultiMorpheme(object):
             return potential_form
 
         if pos[0] == "v":
-            i = pos.rindex('v')
-            return ''.join(self.morphemes[j].surface() for j in range(i)) + self.morphemes[i].dictionary_form()
+            i = pos.rindex("v")
+            return (
+                "".join(self.morphemes[j].surface() for j in range(i))
+                + self.morphemes[i].dictionary_form()
+            )
 
         elif pos[0] == "j":
             return self.morphemes[0].dictionary_form()
@@ -208,7 +226,7 @@ class MultiMorpheme(object):
             return parse(potential_form)[0].part_of_speech()
 
         if pos[0] == "v":
-            i = pos.rindex('v')
+            i = pos.rindex("v")
             return self.morphemes[i].part_of_speech()
 
         if pos[0] in "jx":
