@@ -3,6 +3,7 @@ import requests
 import googletrans
 import re
 import jaconv
+import functools
 
 from pathlib import Path
 from typing import List, Tuple
@@ -53,6 +54,11 @@ alphanum_re = "[\uFF01-\uFF5E]"
 
 def google(text):
     return google_translate.translate(text, src="ja", dest="en").text
+
+
+@functools.lru_cache(maxsize=None)
+def jmdict_lookup(s):
+    return jmd.lookup(s)
 
 
 def guess_verb_class(pos):
@@ -156,14 +162,14 @@ class MultiMorpheme(object):
         pos = self.part_of_speech()
 
         if dform == self.surface():
-            return jmd.lookup(self.surface()).entries
+            return jmdict_lookup(self.surface()).entries
 
         all_conj = merge_multi_dicts(
             *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
         )
 
         if self.surface() in all_conj:
-            return jmd.lookup(dform).entries
+            return jmdict_lookup(dform).entries
 
     def detect_conjugation(self):
         dform = self.dictionary_form()
@@ -214,7 +220,7 @@ def search_morpheme(
     entries: List[jmdict.JMDEntry] = []
     reading = m.reading_form()
     dict_reading = "".join(m.reading_form() for m in parse(m.dictionary_form()))
-    for entry in jmd.lookup(m.dictionary_form()).entries:
+    for entry in jmdict_lookup(m.dictionary_form()).entries:
         if entry.idseq not in ids:
             ids.add(entry.idseq)
             entries.append(entry)
@@ -285,7 +291,7 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
 
 
 def guess_exact_pos(dict_form, pos):
-    entries = jmd.lookup(dict_form).entries
+    entries = jmdict_lookup(dict_form).entries
     pos_strs = {p for e in entries for s in e.senses for p in s.pos}
     pos_abbrevs = [a for p in pos_strs if (a := JMDICT_ABBREV_MAP.get(p))]
     pos_matches = [
@@ -454,7 +460,7 @@ def translation_assist(text):
 
         match_reading = True
         if sudachi_pos == "supplementary symbol":
-            entries = jmd.lookup(dform).entries
+            entries = jmdict_lookup(dform).entries
             if re.match(f"{alphanum_re}+", surface) or not entries:
                 continue
 
