@@ -562,7 +562,7 @@ def translation_assist(text):
                     "    No matches", ", ".join(pos),
                 )
 
-            print(f"    {google(dform)}")
+            print(f"    [google] {google(dform)}")
             print()
 
         for entry, senses in entries:
