@@ -7,24 +7,24 @@ The entire sentence is also translated using Google Translate to give the reader
 
 ```
 ❯ python ja_helper.py 小さい頃ずっと聞いてて最近ふとこの曲が授業中に頭の中で流れてやっと見つけました。
-小さい 頃 ずっと 聞い て て 最近 ふと この 曲 が 授業 中 に 頭 の 中 で 流れ て やっと 見つけ まし た。
+小さい 頃 ずっと 聞いて て 最近 ふと この 曲 が 授業中 に 頭 の 中 で 流れて やっと 見つけました 。
 I listened to it all the time when I was little, and recently I suddenly found this song in my head during class.
-小さい [ちいさい] adjective
-    small/little/tiny ((adjective (keiyoushi)))
+小さい [ちいさい] adjective non-past_plain_pos
+    small/little/tiny (adj-i)
 
 頃 [ころ] noun
-    (approximate) time/around/about/toward ((noun (common) (futsuumeishi)|adverbial noun (fukushitekimeishi)|noun, used as a suffix))
+    (approximate) time/around/about/toward (n|n-adv|n-suf)
     suitable time (or condition)
     time of year/season
 
 ずっと adverb
-    continuously in some state (for a long time, distance)/throughout/all along/the whole time/all the way ((adverb (fukushi)))
+    continuously in some state (for a long time, distance)/throughout/all along/the whole time/all the way (adv)
     much (better, etc.)/by far/far and away
     far away/long ago
     direct/straight
 
 聞いて [きいて] verb (聞く) conjunctive_plain_pos
-    to hear ((Godan verb with 'ku' ending|transitive verb))
+    to hear (v5k|vt)
     to listen (e.g. to music)
     to ask/to enquire/to query
     to learn of/to hear about
@@ -32,39 +32,32 @@ I listened to it all the time when I was little, and recently I suddenly found t
     to smell (esp. incense)/to sample fragrance
 
 て particle
-    casual quoting particle ((particle))
+    casual quoting particle (prt)
     indicates supposition/if ... then
     indicates a rhetorical question
     indicates certainty, insistence, etc.
 
 最近 [さいきん] noun
-    most recent/these days/right now/recently/nowadays ((nouns which may take the genitive case particle 'no'|adverbial noun (fukushitekimeishi)|noun (temporal) (jisoumeishi)))
+    most recent/these days/right now/recently/nowadays (adj-no|n-adv|n-t)
 
 ふと adverb
-    suddenly/casually/accidentally/incidentally/unexpectedly/unintentionally ((adverb (fukushi)))
+    suddenly/casually/accidentally/incidentally/unexpectedly/unintentionally (adv)
 
 この pre-noun adjectival
-    this (something or someone close to the speaker (including the speaker), or ideas expressed by the speaker) ((pre-noun adjectival (rentaishi)))
+    this (something or someone close to the speaker (including the speaker), or ideas expressed by the speaker) (adj-pn)
 
 曲 [きょく] noun
-    song/tune/composition/piece of music ((noun (common) (futsuumeishi)|noun, used as a suffix))
+    song/tune/composition/piece of music (n|n-suf)
 
 が particle
 
-授業 [じゅぎょう] noun
-    lesson/class work/teaching/instruction ((noun (common) (futsuumeishi)|noun or participle which takes the aux. verb suru))
-
-中 [ちゅう] suffix
-    medium/average/middle ((noun (common) (futsuumeishi)|prefix|suffix))
-    middle school
-    China
-    volume two (of three)
-    in/out of (e.g. three out of ten people)
+授業中 [じゅぎょうちゅう] noun
+    while in class (n)
 
 に particle
 
 頭 [あたま] noun
-    head ((noun (common) (futsuumeishi)))
+    head (n)
     hair (on one's head)
     mind/brains/intellect
     leader/chief/boss/captain
@@ -77,7 +70,7 @@ I listened to it all the time when I was little, and recently I suddenly found t
 の particle
 
 中 [なか] noun
-    inside/in ((noun (common) (futsuumeishi)))
+    inside/in (n)
     among/within
     center (centre)/middle
     during/while
@@ -85,7 +78,7 @@ I listened to it all the time when I was little, and recently I suddenly found t
 で particle
 
 流れて [ながれて] verb (流れる) conjunctive_plain_pos
-    to stream/to flow (liquid, time, etc.)/to run (ink) ((Ichidan verb|intransitive verb))
+    to stream/to flow (liquid, time, etc.)/to run (ink) (v1|vi)
     to be washed away/to be carried
     to drift/to float (e.g. clouds)/to wander/to stray
     to sweep (e.g. rumour, fire)/to spread/to circulate
@@ -96,11 +89,11 @@ I listened to it all the time when I was little, and recently I suddenly found t
     to disappear/to be removed
 
 やっと adverb
-    at last/at length ((adverb (fukushi)))
+    at last/at length (adv)
     barely/narrowly/just/by the skin of one's teeth
 
 見つけました [みつけました] verb (見つける) past_polite_pos
-    to discover/to find (e.g. an error in a book)/to come across/to detect/to spot ((Ichidan verb|transitive verb))
+    to discover/to find (e.g. an error in a book)/to come across/to detect/to spot (v1|vt)
     to locate/to find (e.g. something missing)/to find fault
     to be used to seeing/to be familiar with
 ```
