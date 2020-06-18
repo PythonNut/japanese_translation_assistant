@@ -69,6 +69,16 @@ def guess_verb_class(pos):
         return VerbClass.ICHIDAN
     elif "変格" in pos[4]:
         return VerbClass.IRREGULAR
+    elif pos[4].startswith("助動詞-"):
+        # Todo: this is just a heuristic
+        rest = pos[4][4:]
+        r = romkan.to_roma(rest)
+        if r.endswith("u") and re.match(f'{kata_re}+', rest):
+            if r.endswith("ru"):
+                if r[-3] in 'ie':
+                    return VerbClass.ICHIDAN
+
+            return VerbClass.GODAN
 
     print(f"Unrecognized verb: {pos}")
     return
