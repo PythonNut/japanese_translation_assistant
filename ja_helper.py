@@ -1,15 +1,13 @@
 import sys
 import requests
 import googletrans
-import subprocess
-import collections
 import re
 import jaconv
-import itertools
 
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Tuple
 from sudachipy import tokenizer, dictionary, morpheme
+from dataclasses import dataclass
 from jamdict import Jamdict, jmdict
 from japaneseverbconjugator.src.constants.EnumeratedTypes import VerbClass
 import jconj.conj as jconj
@@ -20,7 +18,6 @@ JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
 tokenizer_obj = dictionary.Dictionary().create()
 jmd = Jamdict()
 google_translate = googletrans.Translator()
-google_translate.session.mount(googletrans.urls.BASE, requests.adapters.HTTPAdapter())
 
 SUDACHI_POS_MAP = {
     "感動詞": "interjection",
@@ -80,6 +77,106 @@ morpheme.Morpheme.__str__ = morpheme_to_str
 morpheme.Morpheme.__repr__ = morpheme_to_str
 
 
+@dataclass
+class MultiMorpheme(object):
+    morphemes: List[morpheme.Morpheme]
+
+    def surface(self):
+        return "".join(m.surface() for m in self.morphemes)
+
+    def reading_form(self):
+        return "".join(m.reading_form() for m in self.morphemes)
+
+    def parts_of_speech(self):
+        return [m.part_of_speech() for m in self.morphemes]
+
+    def composition_check(self):
+        if len(self.morphemes) == 1:
+            return True
+
+        parts_of_speech = [
+            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
+        ]
+        root_pos = parts_of_speech[0]
+        rest_pos = set(parts_of_speech[1:])
+
+        if root_pos in ("pronoun", "noun"):
+            if rest_pos.issubset({"suffix"}):
+                return True
+            elif rest_pos.issubset({"particle", "adjective", "auxiliary verb"}):
+                return True
+        elif root_pos == "verb":
+            if rest_pos.issubset({"auxiliary verb", "particle", "verb"}):
+                return True
+        elif root_pos == "adjective":
+            if rest_pos.issubset({"adjective", "auxiliary verb"}):
+                return True
+
+        return False
+
+    def dictionary_form(self):
+        assert self.composition_check()
+        parts_of_speech = [
+            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
+        ]
+        root_pos = parts_of_speech[0]
+
+        if root_pos in ("verb", "adjective"):
+            return self.morphemes[0].dictionary_form()
+
+        result = []
+        for m in self.morphemes:
+            result.append(m.dictionary_form())
+            if m.dictionary_form() != m.surface():
+                break
+
+        return "".join(result)
+
+    def part_of_speech(self):
+        assert self.composition_check()
+        parts_of_speech = [
+            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
+        ]
+        root_pos = parts_of_speech[0]
+
+        if root_pos in ("verb", "adjective"):
+            return self.morphemes[0].part_of_speech()
+
+        i = 1
+        while parts_of_speech[-i] in ("auxiliary verb", "suffix") and i < len(
+            parts_of_speech
+        ):
+            i += 1
+
+        return self.morphemes[-i].part_of_speech()
+
+    def lookup(self):
+        dform = self.dictionary_form()
+        pos = self.part_of_speech()
+
+        if dform == self.surface():
+            return jmd.lookup(self.surface()).entries
+
+        all_conj = merge_multi_dicts(
+            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
+        )
+
+        if self.surface() in all_conj:
+            return jmd.lookup(dform).entries
+
+    def detect_conjugation(self):
+        dform = self.dictionary_form()
+        pos = self.part_of_speech()
+        all_conj = merge_multi_dicts(
+            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
+        )
+
+        return all_conj.get(self.surface(), [])
+
+    def score(self):
+        return bool(self.lookup()) * len(self.morphemes) ** 2
+
+
 def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
     if s_base_pos == "verb":
@@ -115,12 +212,11 @@ def search_morpheme(
     ids = set()
     entries: List[jmdict.JMDEntry] = []
     reading = m.reading_form()
-    dict_reading = parse(m.dictionary_form())[0].reading_form()
-    for search in set((m.dictionary_form(), m.normalized_form())):
-        for entry in jmd.lookup(search).entries:
-            if entry.idseq not in ids:
-                ids.add(entry.idseq)
-                entries.append(entry)
+    dict_reading = "".join(m.reading_form() for m in parse(m.dictionary_form()))
+    for entry in jmd.lookup(m.dictionary_form()).entries:
+        if entry.idseq not in ids:
+            ids.add(entry.idseq)
+            entries.append(entry)
 
     matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
     reading_matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
@@ -187,10 +283,8 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
         return j_pos.startswith("adj")
 
 
-def guess_exact_pos(m: morpheme.Morpheme):
-    dict_form = m.dictionary_form()
+def guess_exact_pos(dict_form, pos):
     entries = jmd.lookup(dict_form).entries
-    pos = m.part_of_speech()
     pos_strs = {p for e in entries for s in e.senses for p in s.pos}
     pos_abbrevs = [a for p in pos_strs if (a := JMDICT_ABBREV_MAP.get(p))]
     pos_matches = [
@@ -203,9 +297,8 @@ def guess_exact_pos(m: morpheme.Morpheme):
     return pos_matches
 
 
-def all_conjugations(m: morpheme.Morpheme, refs=False):
-    dict_form = m.dictionary_form()
-    pos_matches = guess_exact_pos(m)
+def all_conjugations(dict_form, pos, refs=False):
+    pos_matches = guess_exact_pos(dict_form, pos)
     result = {}
 
     for pos_match in pos_matches:
@@ -310,75 +403,49 @@ def merge_multi_dicts(*ds):
     return result
 
 
-def post_parse(morphs: List[morpheme.Morpheme]):
-    morphs.reverse()
-    result = []
-    while morphs:
-        m = morphs.pop()
-        pos = m.part_of_speech()
-        sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "")
+def post_parse(morphemes: List[morpheme.Morpheme]):
+    n = len(morphemes)
+    dp = [(float("-inf"), None) for _ in range(n)]
 
-        if sudachi_pos in ("verb", "adjective"):
-            conj_map = merge_multi_dicts(
-                *[flip_multi_dict(m) for m in all_conjugations(m).values()]
-            )
-
-            limit = 0
-            extenders = []
-            if sudachi_pos == "verb":
-                extenders = ("auxiliary verb", "particle", "verb")
-            elif sudachi_pos == "adjective":
-                extenders = ("adjective", "auxiliary verb")
-
-            while (
-                len(morphs) > limit
-                and SUDACHI_POS_MAP.get(morphs[-limit - 1].part_of_speech()[0])
-                in extenders
-            ):
-                limit += 1
-
-            conj = None
-            num = 0
-            for l in range(limit, -1, -1):
-                suffix = morphs[-1 : -l - 1 : -1]
-                cand = m.surface() + "".join(aux.surface() for aux in suffix)
-                if cand in conj_map:
-                    conj = conj_map[cand]
-                    num = l
-                    break
-
-            if conj:
-                result.append((m, morphs[-1 : -num - 1 : -1], conj))
-                for _ in range(num):
-                    morphs.pop()
+    for i in range(n - 1, -1, -1):
+        for j in range(i + 1, n + 1):
+            unit = MultiMorpheme(morphemes[i:j])
+            if not unit.composition_check():
                 continue
 
-        result.append((m, [], None))
+            unit_score = unit.score()
 
-    return result
+            if j == n:
+                if unit_score > dp[i][0]:
+                    dp[i] = unit_score, [unit]
+                break
+
+            rest_score, rest = dp[j]
+            score = unit_score + rest_score
+            if rest and score > dp[i][0]:
+                dp[i] = score, [unit] + rest
+
+    return dp[0][1]
 
 
 def parse(text):
-    mode = tokenizer.Tokenizer.SplitMode.B
+    mode = tokenizer.Tokenizer.SplitMode.A
     return list(tokenizer_obj.tokenize(text, mode))
 
 
 def translation_assist(text):
-    morphs = parse(text)
+    morphs = post_parse(parse(text))
     print(" ".join(m.surface() for m in morphs))
     print(google(text))
 
-    chunks = post_parse(morphs)
-
     morphemes_seen = set()
 
-    for (m, rest, conj) in chunks:
+    for m in morphs:
         pos = m.part_of_speech()
         dform = m.dictionary_form()
-        surface = m.surface() + "".join(aux.surface() for aux in rest)
-        reading = jaconv.kata2hira(m.reading_form()) + "".join(
-            jaconv.kata2hira(aux.reading_form()) for aux in rest
-        )
+        conj = m.detect_conjugation()
+        surface = m.surface()
+        reading = jaconv.kata2hira(m.reading_form())
 
         sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
         if sudachi_pos == "blank space":
@@ -394,17 +461,7 @@ def translation_assist(text):
                 match_reading = False
                 reading = None
 
-        elif sudachi_pos == "particle" and surface in (
-            "に",
-            "を",
-            "で",
-            "は",
-            "を",
-            "へ",
-            "が",
-            "の",
-            "と",
-        ):
+        elif sudachi_pos == "particle" and surface in "がでとにのはへを":
             print(f"{surface} particle\n")
             continue
 
