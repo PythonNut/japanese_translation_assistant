@@ -94,7 +94,7 @@ def guess_verb_class(pos):
         # Todo: this is just a heuristic
         rest = pos[4][4:]
         r = romkan.to_roma(rest)
-        if r.endswith("u") and re.match(f"{kata_re}+", rest):
+        if r.endswith("u") and re.fullmatch(f"{kata_re}+", rest):
             if r.endswith("ru"):
                 if r[-3] in "ie":
                     return VerbClass.ICHIDAN
@@ -540,7 +540,7 @@ def translation_assist(text):
         match_reading = True
         if sudachi_pos == "supplementary symbol":
             entries = jmdict_lookup(dform).entries
-            if re.match(f"{alphanum_re}+", surface) or not entries:
+            if re.fullmatch(f"{alphanum_re}+", surface) or not entries:
                 continue
 
             if reading == "きごう":
