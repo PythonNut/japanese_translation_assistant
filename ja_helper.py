@@ -73,9 +73,9 @@ def guess_verb_class(pos):
         # Todo: this is just a heuristic
         rest = pos[4][4:]
         r = romkan.to_roma(rest)
-        if r.endswith("u") and re.match(f'{kata_re}+', rest):
+        if r.endswith("u") and re.match(f"{kata_re}+", rest):
             if r.endswith("ru"):
-                if r[-3] in 'ie':
+                if r[-3] in "ie":
                     return VerbClass.ICHIDAN
 
             return VerbClass.GODAN
@@ -487,6 +487,18 @@ def parse(text):
     return list(tokenizer_obj.tokenize(text, mode))
 
 
+def display_part_of_speech(m: MultiMorpheme):
+    pos = m.part_of_speech()
+    sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
+
+    if sudachi_pos == "noun" and pos[1] == "数詞":
+        return "numeral"
+    elif sudachi_pos == "noun" and pos[1] == "固有名詞":
+        return "proper noun"
+
+    return sudachi_pos
+
+
 def translation_assist(text):
     morphs = post_parse(parse(text))
     print(" ".join(m.surface() for m in morphs))
@@ -501,7 +513,7 @@ def translation_assist(text):
         surface = m.surface()
         reading = jaconv.kata2hira(m.reading_form())
 
-        sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
+        sudachi_pos = display_part_of_speech(m)
         if sudachi_pos == "blank space":
             continue
 
@@ -517,6 +529,10 @@ def translation_assist(text):
 
         elif sudachi_pos == "particle" and surface in "がでとにのはへを":
             print(f"{surface} particle\n")
+            continue
+
+        elif sudachi_pos == "numeral":
+            print(f"{surface} [{reading}] numeral\n")
             continue
 
         dform_str = ""
@@ -539,14 +555,13 @@ def translation_assist(text):
         morphemes_seen.add(seen)
 
         entries = search_morpheme(m, match_reading=match_reading)
+
         if not entries:
-            print(
-                "    No matches",
-                m.surface(),
-                m.dictionary_form(),
-                m.reading_form(),
-                ", ".join(pos),
-            )
+            if sudachi_pos != "proper noun":
+                print(
+                    "    No matches", ", ".join(pos),
+                )
+
             print(f"    {google(dform)}")
             print()
 
