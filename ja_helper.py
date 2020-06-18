@@ -210,6 +210,9 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
     elif s_base_pos == "auxiliary verb":
         return not j_pos.startswith("noun")
 
+    elif s_base_pos == "classifier":
+        return j_pos.startswith("adjectival nouns")
+
     else:
         return j_pos.startswith(s_base_pos)
 
