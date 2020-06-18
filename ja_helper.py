@@ -69,7 +69,7 @@ def guess_verb_class(pos):
     elif "変格" in pos[4]:
         return VerbClass.IRREGULAR
 
-    print(f"Unrecognized verb: {m.surface()} {pos}")
+    print(f"Unrecognized verb: {pos}")
     return
 
 
