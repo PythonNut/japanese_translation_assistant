@@ -165,13 +165,8 @@ class MultiMorpheme(object):
             return potential_form
 
         if root_pos == "verb":
-            result = []
-            i = 1
-            while i < len(parts_of_speech) and parts_of_speech[i] == 'verb':
-                result.append(self.morphemes[i-1].surface())
-                i += 1
-            result.append(self.morphemes[i-1].dictionary_form())
-            return ''.join(result)
+            i =  len(parts_of_speech) - 1 - parts_of_speech[::-1].index('verb')
+            return ''.join(self.morphemes[j].surface() for j in range(i)) + self.morphemes[i].dictionary_form()
 
         if root_pos == "adjective":
             return self.morphemes[0].dictionary_form()
@@ -194,10 +189,8 @@ class MultiMorpheme(object):
             return parse(potential_form)[0].part_of_speech()
 
         if root_pos == "verb":
-            i = 1
-            while i < len(parts_of_speech) and parts_of_speech[i] == 'verb':
-                i += 1
-            return self.morphemes[i-1].part_of_speech()
+            i =  len(parts_of_speech) - 1 - parts_of_speech[::-1].index('verb')
+            return self.morphemes[i].part_of_speech()
 
         if root_pos in ("adjective", "auxiliary verb"):
             return self.morphemes[0].part_of_speech()
