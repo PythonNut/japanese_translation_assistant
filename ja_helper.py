@@ -24,6 +24,7 @@ google_translate = googletrans.Translator()
 
 SUDACHI_POS_MAP = {
     "感動詞": "interjection",
+    "記号": "symbol",
     "補助記号": "supplementary symbol",
     "名詞": "noun",
     "接尾辞": "suffix",
@@ -37,6 +38,26 @@ SUDACHI_POS_MAP = {
     "形状詞": "classifier",
     "副詞": "adverb",
     "連体詞": "pre-noun adjectival",
+    "接続詞": "conjunction"
+}
+
+SUDACHI_POS_REGEX_MAP = {
+    "interjection": "i",
+    "symbol": "y",
+    "supplementary symbol": "Y",
+    "noun": "n",
+    "suffix": "s",
+    "particle": "p",
+    "adjective": "j",
+    "auxiliary verb": "x",
+    "pronoun": "r",
+    "blank space": "b",
+    "verb": "v",
+    "prefix": "P",
+    "classifier": "c",
+    "adverb": "a",
+    "pre-noun adjectival": "J",
+    "conjunction": "o",
 }
 
 # 4E00    9FEF    http://www.unicode.org/charts/PDF/U4E00.pdf CJK Unified Ideographs
@@ -108,43 +129,31 @@ class MultiMorpheme(object):
     def parts_of_speech(self):
         return [m.part_of_speech() for m in self.morphemes]
 
-    def internal_parts_of_speech(self):
-        return [SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()]
+    def pos_str(self):
+        return ''.join(SUDACHI_POS_REGEX_MAP[SUDACHI_POS_MAP[pos[0]]] for pos in self.parts_of_speech())
 
     def composition_check(self):
         if len(self.morphemes) == 1:
             return True
 
-        parts_of_speech = self.internal_parts_of_speech()
-        root_pos = parts_of_speech[0]
-        rest_pos = set(parts_of_speech[1:])
-
-        if root_pos in ("pronoun", "noun"):
-            if rest_pos.issubset({"suffix"}):
-                return True
-            elif rest_pos.issubset({"particle", "adjective", "auxiliary verb"}):
-                return True
-        elif root_pos == "verb":
-            if rest_pos.issubset({"auxiliary verb", "particle", "verb"}):
-                return True
-        elif root_pos == "auxiliary verb":
-            if rest_pos.issubset({"auxiliary verb", "verb"}):
-                return True
-            elif len(parts_of_speech) == 2 and rest_pos == {"particle"}:
-                return True
-        elif root_pos == "adjective":
-            if rest_pos.issubset({"adjective", "auxiliary verb"}):
-                return True
+        pos = self.pos_str()
+        if re.fullmatch("[rn](s|[pjx]*)", pos):
+            return True
+        elif re.fullmatch("v[vpx]*", pos):
+            return True
+        elif re.fullmatch("x(p|[vx]*)", pos):
+            return True
+        elif re.fullmatch("j[jx]+", pos):
+            return True
 
         return False
 
     def maybe_potential_form(self):
-        parts_of_speech = self.internal_parts_of_speech()
-        root_pos = parts_of_speech[0]
+        pos = self.pos_str()
         surface = self.surface()
 
         if (
-            root_pos == "verb"
+            pos[0] == "v"
             and len(self.morphemes) == 1
             and self.morphemes[0].dictionary_form() == surface
             and romkan.to_roma(surface).endswith("eru")
@@ -157,18 +166,17 @@ class MultiMorpheme(object):
 
     def dictionary_form(self):
         assert self.composition_check()
-        parts_of_speech = self.internal_parts_of_speech()
-        root_pos = parts_of_speech[0]
+        pos = self.pos_str()
 
         potential_form = self.maybe_potential_form()
         if potential_form:
             return potential_form
 
-        if root_pos == "verb":
-            i =  len(parts_of_speech) - 1 - parts_of_speech[::-1].index('verb')
+        if pos[0] == "v":
+            i = pos.rindex('v')
             return ''.join(self.morphemes[j].surface() for j in range(i)) + self.morphemes[i].dictionary_form()
 
-        if root_pos == "adjective":
+        elif pos[0] == "j":
             return self.morphemes[0].dictionary_form()
 
         result = []
@@ -181,24 +189,21 @@ class MultiMorpheme(object):
 
     def part_of_speech(self):
         assert self.composition_check()
-        parts_of_speech = self.internal_parts_of_speech()
-        root_pos = parts_of_speech[0]
+        pos = self.pos_str()
 
         potential_form = self.maybe_potential_form()
         if potential_form:
             return parse(potential_form)[0].part_of_speech()
 
-        if root_pos == "verb":
-            i =  len(parts_of_speech) - 1 - parts_of_speech[::-1].index('verb')
+        if pos[0] == "v":
+            i = pos.rindex('v')
             return self.morphemes[i].part_of_speech()
 
-        if root_pos in ("adjective", "auxiliary verb"):
+        if pos[0] in "jx":
             return self.morphemes[0].part_of_speech()
 
         i = 1
-        while parts_of_speech[-i] in ("auxiliary verb", "suffix") and i < len(
-            parts_of_speech
-        ):
+        while pos[-i] in "xs" and i < len(pos):
             i += 1
 
         return self.morphemes[-i].part_of_speech()
