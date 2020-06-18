@@ -3,6 +3,7 @@ import requests
 import googletrans
 import re
 import jaconv
+import romkan
 import functools
 
 from pathlib import Path
@@ -97,13 +98,14 @@ class MultiMorpheme(object):
     def parts_of_speech(self):
         return [m.part_of_speech() for m in self.morphemes]
 
+    def internal_parts_of_speech(self):
+        return [SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()]
+
     def composition_check(self):
         if len(self.morphemes) == 1:
             return True
 
-        parts_of_speech = [
-            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
-        ]
+        parts_of_speech = self.internal_parts_of_speech()
         root_pos = parts_of_speech[0]
         rest_pos = set(parts_of_speech[1:])
 
@@ -118,18 +120,39 @@ class MultiMorpheme(object):
         elif root_pos == "auxiliary verb":
             if rest_pos.issubset({"auxiliary verb", "verb"}):
                 return True
+            elif len(parts_of_speech) == 2 and rest_pos == {"particle"}:
+                return True
         elif root_pos == "adjective":
             if rest_pos.issubset({"adjective", "auxiliary verb"}):
                 return True
 
         return False
 
+    def maybe_potential_form(self):
+        parts_of_speech = self.internal_parts_of_speech()
+        root_pos = parts_of_speech[0]
+        surface = self.surface()
+
+        if (
+            root_pos == "verb"
+            and len(self.morphemes) == 1
+            and self.morphemes[0].dictionary_form() == surface
+            and romkan.to_roma(surface).endswith("eru")
+            and not jmdict_lookup(surface).entries
+        ):
+            suf = romkan.to_hiragana(romkan.to_roma(surface[-2:]).replace("eru", "u"))
+            result = surface[:-2] + suf
+            if jmdict_lookup(result).entries:
+                return result
+
     def dictionary_form(self):
         assert self.composition_check()
-        parts_of_speech = [
-            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
-        ]
+        parts_of_speech = self.internal_parts_of_speech()
         root_pos = parts_of_speech[0]
+
+        potential_form = self.maybe_potential_form()
+        if potential_form:
+            return potential_form
 
         if root_pos in ("verb", "adjective"):
             return self.morphemes[0].dictionary_form()
@@ -144,10 +167,12 @@ class MultiMorpheme(object):
 
     def part_of_speech(self):
         assert self.composition_check()
-        parts_of_speech = [
-            SUDACHI_POS_MAP.get(pos[0], pos[0]) for pos in self.parts_of_speech()
-        ]
+        parts_of_speech = self.internal_parts_of_speech()
         root_pos = parts_of_speech[0]
+
+        potential_form = self.maybe_potential_form()
+        if potential_form:
+            return parse(potential_form)[0].part_of_speech()
 
         if root_pos in ("verb", "adjective", "auxiliary verb"):
             return self.morphemes[0].part_of_speech()
@@ -160,6 +185,13 @@ class MultiMorpheme(object):
 
         return self.morphemes[-i].part_of_speech()
 
+    def all_conjugations(self):
+        dform = self.dictionary_form()
+        pos = self.part_of_speech()
+        return merge_multi_dicts(
+            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
+        )
+
     def lookup(self):
         dform = self.dictionary_form()
         pos = self.part_of_speech()
@@ -167,21 +199,11 @@ class MultiMorpheme(object):
         if dform == self.surface():
             return jmdict_lookup(self.surface()).entries
 
-        all_conj = merge_multi_dicts(
-            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
-        )
-
-        if self.surface() in all_conj:
+        if self.surface() in self.all_conjugations():
             return jmdict_lookup(dform).entries
 
     def detect_conjugation(self):
-        dform = self.dictionary_form()
-        pos = self.part_of_speech()
-        all_conj = merge_multi_dicts(
-            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
-        )
-
-        return all_conj.get(self.surface(), [])
+        return self.all_conjugations().get(self.surface(), [])
 
     def score(self):
         return bool(self.lookup()) * len(self.morphemes) ** 2
@@ -400,7 +422,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         entry[ref_map[15, 1, False, False]].append(tes[0] + "る")
         entry[ref_map[15, 2, False, False]].append(tes[0] + "た")
 
-    if pos_match == 'cop-da':
+    if pos_match == "cop-da":
         for k, vs in entry.items():
             for v in vs:
                 if v.startswith("では"):
