@@ -120,6 +120,18 @@ morpheme.Morpheme.__repr__ = morpheme_to_str
 class MultiMorpheme(object):
     morphemes: List[morpheme.Morpheme]
 
+    def __init__(self, ms):
+        if isinstance(ms, str):
+            self.morphemes = parse(ms)
+        else:
+            self.morphemes = ms
+
+    def __str__(self):
+        return "|".join(m.surface() for m in self.morphemes)
+
+    def __repr__(self):
+        return f"MultiMorpheme({str(self)})"
+
     def surface(self):
         return "".join(m.surface() for m in self.morphemes)
 
@@ -230,6 +242,9 @@ class MultiMorpheme(object):
 
     def score(self):
         return bool(self.lookup()) * len(self.morphemes) ** 2
+
+
+MM = MultiMorpheme
 
 
 def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
