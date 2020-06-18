@@ -566,10 +566,6 @@ def translation_assist(text):
             print(f"{surface} particle\n")
             continue
 
-        elif sudachi_pos == "numeral":
-            print(f"{surface} [{reading}] numeral\n")
-            continue
-
         dform_str = ""
         if dform != m.surface():
             dform_str = f" ({dform})"
@@ -592,7 +588,7 @@ def translation_assist(text):
         entries = search_morpheme(m, match_reading=match_reading)
 
         if not entries:
-            if sudachi_pos != "proper noun":
+            if sudachi_pos not in ("numeral", "proper noun"):
                 print(
                     "    No matches", ", ".join(pos),
                 )
