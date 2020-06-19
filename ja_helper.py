@@ -240,11 +240,14 @@ class MultiMorpheme(object):
 
         return self.morphemes[-i].part_of_speech()
 
-    def all_conjugations(self):
+    def all_conjugations(self, raw=False):
         dform = self.dictionary_form()
         pos = self.part_of_speech()
+        all_conj = all_conjugations(dform, pos)
+        if raw:
+            return all_conj
         return merge_multi_dicts(
-            *[flip_multi_dict(m) for m in all_conjugations(dform, pos).values()]
+            *[flip_multi_dict(m) for m in all_conj.values()]
         )
 
     def lookup(self):
