@@ -425,10 +425,12 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
     for (_, case, neg, pol, _), v in conjs.items():
         if cases and case not in cases:
             continue
-        neg_str = "neg" if neg else "pos"
-        pol_str = "polite" if pol else "plain"
+        neg_str = "_neg" if neg else ""
+        pol_str = "_pol" if pol else ""
         type_str = CT["conj"][case][1].lower().split(" ")[0]
-        key = f"{type_str}_{pol_str}_{neg_str}"
+        if type_str == "non-past":
+            type_str = ""
+        key = f"{type_str}{pol_str}{neg_str}".lstrip("_")
         entry.setdefault(key, []).append(v)
         ref_map[case, neg, pol] = key
 
@@ -446,7 +448,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         pass_reverse = {v: k for k, v in pass_ref.items()}
 
         for k, v in pass_entry.items():
-            key = f"passive_{k}"
+            key = f"passive_{k}".rstrip("_")
             entry[key] = v
             ref_map[(6, *pass_reverse[k])] = key
 
@@ -461,7 +463,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         tai_entry[tai_ref[1, False, False]].extend((renyoukei + "てぇ", renyoukei + "てー"))
 
         for k, v in tai_entry.items():
-            key = f"tai_{k}"
+            key = f"tai_{k}".rstrip("_")
             entry[key] = v
             ref_map[(14, *tai_reverse[k])] = key
 
@@ -474,7 +476,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         tai3_reverse = {v: k for k, v in tai3_ref.items()}
 
         for k, v in tai3_entry.items():
-            key = f"tai3_{k}"
+            key = f"tai3_{k}".rstrip("_")
             entry[key] = v
             ref_map[(14, *tai3_reverse[k])] = key
 
@@ -486,7 +488,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
         prog_reverse = {v: k for k, v in prog_ref.items()}
 
         for k, v in prog_entry.items():
-            key = f"progressive_{k}"
+            key = f"progressive_{k}".rstrip("_")
             entry[key] = v
             ref_map[(15, *prog_reverse[k])] = key
 
