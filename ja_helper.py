@@ -439,10 +439,13 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
 
     if pos_match.startswith("v") and (not cases or 6 in cases):
         passive = entry[ref_map[6, False, False]][0]
-        assert passive.endswith("る")
-        key = "passive_conjunctive_plain_pos"
-        entry[key] = [passive[:-1] + "て"]
-        ref_map[(6, 3, False, False)] = key
+        pass_entry, pass_ref = all_conjugations_helper(passive, "v1", {2, 3})
+        pass_reverse = {v: k for k, v in pass_ref.items()}
+
+        for k, v in pass_entry.items():
+            key = f"passive_{k}"
+            entry[key] = v
+            ref_map[(6, *pass_reverse[k])] = key
 
     if pos_match.startswith("v") and (not cases or 14 in cases):
         plain_pos_pol = entry[ref_map[1, False, True]]
