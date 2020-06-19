@@ -488,7 +488,9 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
             ref_map[(15, *prog_reverse[k])] = key
 
         entry[ref_map[15, 1, False, False]].append(tes[0] + "る")
+        entry[ref_map[15, 1, True, False]].append(tes[0] + "ない")
         entry[ref_map[15, 2, False, False]].append(tes[0] + "た")
+        entry[ref_map[15, 2, True, False]].append(tes[0] + "なかった")
 
     if pos_match == "cop-da":
         for k, vs in entry.items():
