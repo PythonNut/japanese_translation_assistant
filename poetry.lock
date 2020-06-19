@@ -426,7 +426,7 @@ description = "Python version of Sudachi, the Japanese Morphological Analyzer"
 name = "sudachipy"
 optional = false
 python-versions = "*"
-version = "0.4.4"
+version = "0.4.9"
 
 [package.dependencies]
 dartsclone = ">=0.9.0,<0.10.0"
@@ -470,7 +470,7 @@ python-versions = "*"
 version = "0.2.4"
 
 [metadata]
-content-hash = "b3b98c4662d19eff68f699ad4060eea6b67d012f82130adc07cb14e82651acc8"
+content-hash = "6959f62b015daa4bb91d81cd661ea1b103a7dbc84179ade96893dde9b2268cca"
 python-versions = "^3.8"
 
 [metadata.files]
@@ -724,8 +724,16 @@ sudachidict-core = [
     {file = "SudachiDict-core-20200330.tar.gz", hash = "sha256:8405419f0a4213f638b43f0ca0147becfc9fd4a342366443da77c5a20c352242"},
 ]
 sudachipy = [
-    {file = "SudachiPy-0.4.4-py3-none-any.whl", hash = "sha256:e82cd3c37db4f938108a4a9af650c211e647eb81cbbed2baca12c82613b88148"},
-    {file = "SudachiPy-0.4.4.tar.gz", hash = "sha256:1c2ef0754206674ff51426858d095c498fe7da9b647f9c927ff58b1bec0a5c5f"},
+    {file = "SudachiPy-0.4.9-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:fc67119e3d6bcafc3fb34e58a86dae1b7479034ddb904b03693f389ebc7b68ce"},
+    {file = "SudachiPy-0.4.9-cp36-cp36m-win32.whl", hash = "sha256:9d1555885efa46cd74959243d9364def7da2e6ae82cd40743992241f9600153a"},
+    {file = "SudachiPy-0.4.9-cp36-cp36m-win_amd64.whl", hash = "sha256:10b2e47f42c56e09ad1caa680cae33fedb6603f95d8104c3039cb6c6d8607f02"},
+    {file = "SudachiPy-0.4.9-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:8d585728c4a54cc5340ccc0a8d0b44c4db3f5964bceeef85a08b603f93a9b083"},
+    {file = "SudachiPy-0.4.9-cp37-cp37m-win32.whl", hash = "sha256:f76d60cf7f8c1b007744f269d79d7e4fa34429952866e153ac8203c31e396a64"},
+    {file = "SudachiPy-0.4.9-cp37-cp37m-win_amd64.whl", hash = "sha256:eea86f49d4996f5ac3f9cdd2f877eb71a890e2f06f0a248d3f16e3aff528005d"},
+    {file = "SudachiPy-0.4.9-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:a13669e2e52e9aa3c54f4f3b00dd46380d6749b6e5320fd15d974bbb330c7f8a"},
+    {file = "SudachiPy-0.4.9-cp38-cp38-win32.whl", hash = "sha256:103c4ef459b2d12f09330e520ec38aa9375cfcdef5177b7b2542756578cc6f4b"},
+    {file = "SudachiPy-0.4.9-cp38-cp38-win_amd64.whl", hash = "sha256:60a5e712ff00f9decc9d956179a92059fcfe0ecbffb33ba6ad1c232b613ac92d"},
+    {file = "SudachiPy-0.4.9.tar.gz", hash = "sha256:4d724ce8a5b96f53a348744d5b90477a0b25b18f7cad2e908c7100701425bb94"},
 ]
 traitlets = [
     {file = "traitlets-4.3.3-py2.py3-none-any.whl", hash = "sha256:70b4c6a1d9019d7b4f6846832288f86998aa3b9207c6821f3578a6a6a467fe44"},

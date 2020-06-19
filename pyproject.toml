@@ -7,7 +7,7 @@ authors = ["PythonNut <PythonNut@users.noreply.github.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 JapaneseVerbConjugator = "^1.0.1"
-SudachiPy = "0.4.4"
+SudachiPy = "^0.4.4"
 romkan = "^0.2.1"
 jaconv = "^0.2.4"
 googletrans = {git = "https://github.com/ssut/py-googletrans.git"}
