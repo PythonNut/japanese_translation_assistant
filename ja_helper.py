@@ -169,6 +169,8 @@ class MultiMorpheme(object):
         pos = self.pos_str()
         surface = self.surface()
 
+        maybe_dform = None
+
         if (
             pos[0] == "v"
             and len(self.morphemes) == 1
@@ -176,12 +178,10 @@ class MultiMorpheme(object):
             and romkan.to_roma(surface).endswith("eru")
             and not jmdict_lookup(surface).entries
         ):
-            suf = romkan.to_hiragana(romkan.to_roma(surface[-2:]).replace("eru", "u"))
-            result = surface[:-2] + suf
-            if jmdict_lookup(result).entries:
-                return result
+            suf = romkan.to_hiragana(romkan.to_roma(surface[-2:])[:-3] + "u")
+            maybe_dform = surface[:-2] + suf
 
-        if (
+        elif (
             pos[0] == "v"
             and romkan.to_roma(self.morphemes[0].surface()).endswith("e")
             and not jmdict_lookup(surface).entries
@@ -189,9 +189,28 @@ class MultiMorpheme(object):
             suf = romkan.to_hiragana(
                 romkan.to_roma(self.morphemes[0].surface()[-1])[:-1] + "u"
             )
-            result = self.morphemes[0].surface()[:-1] + suf
-            if jmdict_lookup(result).entries:
-                return result
+            maybe_dform = self.morphemes[0].surface()[:-1] + suf
+
+        if not maybe_dform:
+            return
+
+        maybe_pos = parse(maybe_dform)[0].part_of_speech()
+
+        if (
+            surface
+            not in merge_multi_dicts(
+                *[
+                    flip_multi_dict(m)
+                    for m in all_conjugations(maybe_dform, maybe_pos).values()
+                ]
+            ).keys()
+        ):
+            return
+
+        if not jmdict_lookup(maybe_dform).entries:
+            return
+
+        return maybe_dform
 
     def dictionary_form(self):
         assert self.composition_check()
@@ -246,9 +265,7 @@ class MultiMorpheme(object):
         all_conj = all_conjugations(dform, pos)
         if raw:
             return all_conj
-        return merge_multi_dicts(
-            *[flip_multi_dict(m) for m in all_conj.values()]
-        )
+        return merge_multi_dicts(*[flip_multi_dict(m) for m in all_conj.values()])
 
     def lookup(self):
         dform = self.dictionary_form()
