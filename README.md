@@ -9,7 +9,7 @@ The entire sentence is also translated using Google Translate to give the reader
 ❯ python ja_helper.py 小さい頃ずっと聞いてて最近ふとこの曲が授業中に頭の中で流れてやっと見つけました。
 小さい 頃 ずっと 聞いて て 最近 ふと この 曲 が 授業中 に 頭 の 中 で 流れて やっと 見つけました 。
 I listened to it all the time when I was little, and recently I suddenly found this song in my head during class.
-小さい [ちいさい] adjective non-past_plain_pos
+小さい [ちいさい] adjective
     small/little/tiny (adj-i)
 
 頃 [ころ] noun
@@ -23,7 +23,7 @@ I listened to it all the time when I was little, and recently I suddenly found t
     far away/long ago
     direct/straight
 
-聞いて [きいて] verb (聞く) conjunctive_plain_pos
+聞いて [きいて] verb (聞く) conjunctive
     to hear (v5k|vt)
     to listen (e.g. to music)
     to ask/to enquire/to query
@@ -77,7 +77,7 @@ I listened to it all the time when I was little, and recently I suddenly found t
 
 で particle
 
-流れて [ながれて] verb (流れる) conjunctive_plain_pos
+流れて [ながれて] verb (流れる) conjunctive
     to stream/to flow (liquid, time, etc.)/to run (ink) (v1|vi)
     to be washed away/to be carried
     to drift/to float (e.g. clouds)/to wander/to stray
@@ -92,7 +92,7 @@ I listened to it all the time when I was little, and recently I suddenly found t
     at last/at length (adv)
     barely/narrowly/just/by the skin of one's teeth
 
-見つけました [みつけました] verb (見つける) past_polite_pos
+見つけました [みつけました] verb (見つける) past_pol
     to discover/to find (e.g. an error in a book)/to come across/to detect/to spot (v1|vt)
     to locate/to find (e.g. something missing)/to find fault
     to be used to seeing/to be familiar with
