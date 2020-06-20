@@ -414,7 +414,10 @@ def guess_exact_pos(dict_form, pos):
 
 
 def all_conjugations(dict_form, pos, refs=False):
-    dict_form, pos_matches = guess_exact_pos(dict_form, pos)
+    if isinstance(pos, str):
+        pos_matches = [pos]
+    else:
+        dict_form, pos_matches = guess_exact_pos(dict_form, pos)
     result = {}
 
     for pos_match in pos_matches:
