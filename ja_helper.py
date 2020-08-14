@@ -372,7 +372,7 @@ def search_morpheme(
 
 def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
-    if s_base_pos == "auxiliary verb" and s_pos[4] == '助動詞-ナイ':
+    if s_base_pos == "auxiliary verb" and s_pos[4] in ("助動詞-ナイ", "助動詞-タイ"):
         return j_pos == "adj-i"
     elif s_base_pos in ("verb", "auxiliary verb"):
         vclass = guess_verb_class(s_pos)
