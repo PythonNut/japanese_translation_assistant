@@ -287,34 +287,65 @@ class MultiMorpheme(object):
 MM = MultiMorpheme
 
 
-def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_pos: str):
+def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_desc: str):
+    j_pos = JMDICT_ABBREV_MAP.get(j_desc, j_desc)
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
+
     if s_base_pos == "verb":
         vclass = guess_verb_class(s_pos)
         if vclass == VerbClass.GODAN:
-            return j_pos.startswith("Godan verb")
+            return j_pos.startswith("v5")
 
         elif vclass == VerbClass.ICHIDAN:
-            return j_pos.startswith("Ichidan verb")
+            return j_pos.startswith("v1")
 
         elif vclass == VerbClass.IRREGULAR:
             if s_pos[4] == "サ行変格":
-                return j_pos.startswith("suru verb")
+                return j_pos in ("vs-i", "vs-s")
 
             elif s_pos[4] == "カ行変格":
-                return j_pos.startswith("Kuru verb")
+                return j_pos == "vk"
 
-            return j_pos.endswith("irregular")
+            return j_pos == "vs-i"
 
-        return "verb" in j_pos
+        return "verb" in j_desc
+
     elif s_base_pos == "auxiliary verb":
-        return not j_pos.startswith("noun")
+        return not j_desc.startswith("noun")
 
     elif s_base_pos == "classifier":
-        return j_pos.startswith("adjectival nouns")
+        return j_pos == "adj-na"
 
     else:
-        return j_pos.startswith(s_base_pos)
+        return j_desc.startswith(s_base_pos)
+
+
+def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
+    s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
+    if s_base_pos == "auxiliary verb" and s_pos[4] in ("助動詞-ナイ", "助動詞-タイ"):
+        return j_pos == "adj-i"
+    elif s_base_pos in ("verb", "auxiliary verb"):
+        vclass = guess_verb_class(s_pos)
+        if vclass == VerbClass.GODAN:
+            return j_pos.startswith("v5")
+
+        elif vclass == VerbClass.ICHIDAN:
+            return j_pos.startswith("v1")
+
+        elif vclass == VerbClass.IRREGULAR:
+            if s_pos[4] == "サ行変格":
+                return j_pos in ("vs-i", "vs-s")
+
+            elif s_pos[4] == "カ行変格":
+                return j_pos == "vk"
+
+        return "verb" in j_pos
+
+    elif s_base_pos == "noun":
+        return j_pos == "n" or j_pos.startswith("n-")
+
+    elif s_base_pos == "adjective":
+        return j_pos.startswith("adj")
 
 
 def search_morpheme(
@@ -368,34 +399,6 @@ def search_morpheme(
         return reading_matches
 
     return matches
-
-
-def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
-    s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
-    if s_base_pos == "auxiliary verb" and s_pos[4] in ("助動詞-ナイ", "助動詞-タイ"):
-        return j_pos == "adj-i"
-    elif s_base_pos in ("verb", "auxiliary verb"):
-        vclass = guess_verb_class(s_pos)
-        if vclass == VerbClass.GODAN:
-            return j_pos.startswith("v5")
-
-        elif vclass == VerbClass.ICHIDAN:
-            return j_pos.startswith("v1")
-
-        elif vclass == VerbClass.IRREGULAR:
-            if s_pos[4] == "サ行変格":
-                return j_pos in ("vs-i", "vs-s")
-
-            elif s_pos[4] == "カ行変格":
-                return j_pos == "vk"
-
-        return "verb" in j_pos
-
-    elif s_base_pos == "noun":
-        return j_pos == "n" or j_pos.startswith("n-")
-
-    elif s_base_pos == "adjective":
-        return j_pos.startswith("adj")
 
 
 def guess_exact_pos(dict_form, pos):
