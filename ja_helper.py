@@ -221,7 +221,7 @@ class MultiMorpheme(object):
             return potential_form
 
         if pos[0] == "v":
-            i = pos.rindex("v")
+            i = pos.index("v")
             return (
                 "".join(self.morphemes[j].surface() for j in range(i))
                 + self.morphemes[i].dictionary_form()
@@ -247,7 +247,7 @@ class MultiMorpheme(object):
             return parse(potential_form)[0].part_of_speech()
 
         if pos[0] == "v":
-            i = pos.rindex("v")
+            i = pos.index("v")
             return self.morphemes[i].part_of_speech()
 
         if pos[0] in "jx":
