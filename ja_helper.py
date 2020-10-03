@@ -601,6 +601,7 @@ def translation_assist(text):
         dform = m.dictionary_form()
         conj = m.detect_conjugation()
         surface = m.surface()
+        has_kanji = re.search(kanji_re, surface)
         reading = jaconv.kata2hira(m.reading_form())
 
         sudachi_pos = display_part_of_speech(m)
@@ -641,6 +642,11 @@ def translation_assist(text):
         morphemes_seen.add(seen)
 
         entries = search_morpheme(m, match_reading=match_reading)
+        show_entry_readings = False
+        if not entries and match_reading and has_kanji:
+            print("    No reading matches")
+            entries = search_morpheme(m, match_reading=False)
+            show_entry_readings = True
 
         if not entries:
             if sudachi_pos not in ("numeral", "proper noun"):
@@ -652,6 +658,8 @@ def translation_assist(text):
             print()
 
         for entry, senses in entries:
+            if show_entry_readings:
+                print(f"    {entry.kana_forms}")
             if not senses:
                 print("    No senses???")
                 continue
