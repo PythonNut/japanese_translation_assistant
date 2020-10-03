@@ -7,7 +7,6 @@ authors = ["PythonNut <PythonNut@users.noreply.github.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 JapaneseVerbConjugator = "^1.0.1"
-SudachiPy = "^0.4.4"
 romkan = "^0.2.1"
 jaconv = "^0.2.4"
 googletrans = {git = "https://github.com/ssut/py-googletrans.git"}
@@ -15,6 +14,7 @@ requests = "^2.23.0"
 jamdict = "^0.1a6"
 mecab-python3 = "^0.996.5"
 SudachiDict-core = "^20200330"
+SudachiPy = "^0.4.9"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.13.0"

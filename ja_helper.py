@@ -349,8 +349,8 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
 
 
 def search_morpheme(
-    m: morpheme.Morpheme, match_reading=True
-) -> Tuple[List[jmdict.JMDEntry], List[int]]:
+    m: MultiMorpheme, match_reading=True
+) -> List[Tuple[jmdict.JMDEntry, List[int]]]:
     pos = m.part_of_speech()
     has_kanji = re.search(kanji_re, m.surface())
     ids = set()
@@ -362,8 +362,8 @@ def search_morpheme(
             ids.add(entry.idseq)
             entries.append(entry)
 
-    matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
-    reading_matches: Tuple[List[jmdict.JMDEntry], List[int]] = []
+    matches: List[Tuple[jmdict.JMDEntry, List[int]]] = []
+    reading_matches: List[Tuple[jmdict.JMDEntry, List[int]]] = []
     for entry in entries:
         if match_reading and not any(
             jaconv.hira2kata(r.text) in (reading, dict_reading)
@@ -547,7 +547,7 @@ def merge_multi_dicts(*ds):
     return result
 
 
-def post_parse(morphemes: List[morpheme.Morpheme]):
+def post_parse(morphemes: List[morpheme.Morpheme]) -> List[MultiMorpheme]:
     n = len(morphemes)
     dp = [(float("-inf"), None) for _ in range(n)]
 
@@ -651,7 +651,8 @@ def translation_assist(text):
         if not entries:
             if sudachi_pos not in ("numeral", "proper noun"):
                 print(
-                    "    No matches", ", ".join(pos),
+                    "    No matches",
+                    ", ".join(pos),
                 )
 
             print(f"    [google] {google(dform)}")
