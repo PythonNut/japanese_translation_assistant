@@ -1,18 +1,22 @@
 import sys
-import requests
 import googletrans
 import re
 import jaconv
 import romkan
 import functools
 
-from pathlib import Path
-from typing import List, Tuple
-from sudachipy import tokenizer, dictionary, morpheme
+from typing import Collection, Dict, List, Optional, Tuple, TypeVar, Union
+from sudachipy import dictionary, morpheme
+from sudachipy.morpheme import Morpheme
+import sudachipy.tokenizer as tokenizer
 from dataclasses import dataclass
 from jamdict import Jamdict, jmdict
 from japaneseverbconjugator.src.constants.EnumeratedTypes import VerbClass
 import jconj.conj as jconj
+
+SudachiPos = Tuple[str, str, str, str, str, str]
+K = TypeVar("K")
+V = TypeVar("V")
 
 CT = jconj.read_conj_tables("./jconj/data")
 JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
@@ -74,16 +78,16 @@ kata_re = "[\u30A0-\u30FF]"
 alphanum_re = "[\uFF01-\uFF5E]"
 
 
-def google(text):
+def google(text: str):
     return google_translate.translate(text, src="ja", dest="en").text
 
 
 @functools.lru_cache(maxsize=None)
-def jmdict_lookup(s):
+def jmdict_lookup(s: str):
     return jmd.lookup(s, lookup_chars=False)
 
 
-def guess_verb_class(pos):
+def guess_verb_class(pos: SudachiPos) -> Optional[VerbClass]:
     if "五段" in pos[4]:
         return VerbClass.GODAN
     elif "一段" in pos[4]:
@@ -105,10 +109,10 @@ def guess_verb_class(pos):
     return
 
 
-def morpheme_to_str(m: morpheme.Morpheme):
+def morpheme_to_str(m: morpheme.Morpheme) -> str:
     surface = m.surface()
     dform = m.dictionary_form()
-    pos = m.part_of_speech()
+    pos: SudachiPos = m.part_of_speech()
     return f"Morpheme({repr(surface)}, dform={repr(dform)}, pos={repr(pos)})"
 
 
@@ -120,34 +124,34 @@ morpheme.Morpheme.__repr__ = morpheme_to_str
 class MultiMorpheme(object):
     morphemes: List[morpheme.Morpheme]
 
-    def __init__(self, ms):
+    def __init__(self, ms: Union[str, List[Morpheme]]):
         if isinstance(ms, str):
             self.morphemes = parse(ms)
         else:
             self.morphemes = ms
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "|".join(m.surface() for m in self.morphemes)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"MultiMorpheme({str(self)})"
 
-    def surface(self):
+    def surface(self) -> str:
         return "".join(m.surface() for m in self.morphemes)
 
-    def reading_form(self):
+    def reading_form(self) -> str:
         return "".join(m.reading_form() for m in self.morphemes)
 
-    def parts_of_speech(self):
+    def parts_of_speech(self) -> List[SudachiPos]:
         return [m.part_of_speech() for m in self.morphemes]
 
-    def pos_str(self):
+    def pos_str(self) -> str:
         return "".join(
             SUDACHI_POS_REGEX_MAP[SUDACHI_POS_MAP[pos[0]]]
             for pos in self.parts_of_speech()
         )
 
-    def composition_check(self):
+    def composition_check(self) -> bool:
         if len(self.morphemes) == 1:
             return True
 
@@ -165,7 +169,7 @@ class MultiMorpheme(object):
 
         return False
 
-    def maybe_potential_form(self):
+    def maybe_potential_form(self) -> Optional[str]:
         pos = self.pos_str()
         surface = self.surface()
 
@@ -194,12 +198,12 @@ class MultiMorpheme(object):
         if not maybe_dform:
             return
 
-        maybe_pos = parse(maybe_dform)[0].part_of_speech()
+        maybe_pos: SudachiPos = parse(maybe_dform)[0].part_of_speech()
 
         if (
             surface
             not in merge_multi_dicts(
-                *[
+                [
                     flip_multi_dict(m)
                     for m in all_conjugations(maybe_dform, maybe_pos).values()
                 ]
@@ -212,7 +216,7 @@ class MultiMorpheme(object):
 
         return maybe_dform
 
-    def dictionary_form(self):
+    def dictionary_form(self) -> str:
         assert self.composition_check()
         pos = self.pos_str()
 
@@ -238,7 +242,7 @@ class MultiMorpheme(object):
 
         return "".join(result)
 
-    def part_of_speech(self):
+    def part_of_speech(self) -> SudachiPos:
         assert self.composition_check()
         pos = self.pos_str()
 
@@ -259,17 +263,16 @@ class MultiMorpheme(object):
 
         return self.morphemes[-i].part_of_speech()
 
-    def all_conjugations(self, raw=False):
+    def all_conjugations(self, raw=False) -> Dict[str, List[str]]:
         dform = self.dictionary_form()
         pos = self.part_of_speech()
         all_conj = all_conjugations(dform, pos)
         if raw:
-            return all_conj
-        return merge_multi_dicts(*[flip_multi_dict(m) for m in all_conj.values()])
+            return all_conj  # type: ignore
+        return merge_multi_dicts([flip_multi_dict(m) for m in all_conj.values()])
 
     def lookup(self):
         dform = self.dictionary_form()
-        pos = self.part_of_speech()
 
         if dform == self.surface():
             return jmdict_lookup(self.surface()).entries
@@ -277,17 +280,17 @@ class MultiMorpheme(object):
         if self.surface() in self.all_conjugations():
             return jmdict_lookup(dform).entries
 
-    def detect_conjugation(self):
+    def detect_conjugation(self) -> List[str]:
         return self.all_conjugations().get(self.surface(), [])
 
-    def score(self):
+    def score(self) -> float:
         return bool(self.lookup()) * len(self.morphemes) ** 2
 
 
 MM = MultiMorpheme
 
 
-def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_desc: str):
+def sudachi_jmdict_pos_match(s_pos: SudachiPos, j_desc: str) -> bool:
     j_pos = JMDICT_ABBREV_MAP.get(j_desc, j_desc)
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
 
@@ -320,7 +323,7 @@ def sudachi_jmdict_pos_match(s_pos: Tuple[str, ...], j_desc: str):
         return j_desc.startswith(s_base_pos)
 
 
-def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
+def sudachi_jmdict_abbrev_match(s_pos: SudachiPos, j_pos: str) -> bool:
     s_base_pos = SUDACHI_POS_MAP.get(s_pos[0], "")
     if s_base_pos == "auxiliary verb" and s_pos[4] in ("助動詞-ナイ", "助動詞-タイ"):
         return j_pos == "adj-i"
@@ -346,6 +349,8 @@ def sudachi_jmdict_abbrev_match(s_pos: Tuple[str, ...], j_pos: str):
 
     elif s_base_pos == "adjective":
         return j_pos.startswith("adj")
+
+    return False
 
 
 def search_morpheme(
@@ -373,7 +378,7 @@ def search_morpheme(
 
         match_senses = list()
         senses = list()
-        reading_matches.append((entry, set(range(len(entry.senses)))))
+        reading_matches.append((entry, list(range(len(entry.senses)))))
         for i, sense in enumerate(entry.senses):
             if not sense.pos:
                 senses.append(i)
@@ -401,7 +406,7 @@ def search_morpheme(
     return matches
 
 
-def guess_exact_pos(dict_form, pos):
+def guess_exact_pos(dict_form: str, pos: SudachiPos) -> Tuple[str, List[str]]:
     if dict_form in ("だ", "です") and pos[4] in ("助動詞-ダ", "助動詞-デス"):
         return "だ", ["cop-da"]
 
@@ -418,24 +423,28 @@ def guess_exact_pos(dict_form, pos):
     return dict_form, pos_matches
 
 
-def all_conjugations(dict_form, pos, refs=False):
+def all_conjugations(
+    dict_form: str, pos: Union[str, SudachiPos], refs=False
+) -> Dict[str, Dict[str, List[str]]]:
     if isinstance(pos, str):
         pos_matches = [pos]
     else:
         dict_form, pos_matches = guess_exact_pos(dict_form, pos)
-    result = {}
+    result: Dict[str, Dict[str, List[str]]] = {}
 
     for pos_match in pos_matches:
         conjugations, ref_map = all_conjugations_helper(dict_form, pos_match)
         if refs:
-            result[pos_match] = conjugations, ref_map
+            result[pos_match] = conjugations, ref_map  # type: ignore
         else:
             result[pos_match] = conjugations
 
     return result
 
 
-def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
+def all_conjugations_helper(
+    dict_form: str, pos_match: str, cases: Optional[Collection[int]] = None
+):
     pos = CT["kwpos"][pos_match][0]
     has_kanji = re.search(kanji_re, dict_form)
 
@@ -444,9 +453,13 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
     else:
         kanji, kana = None, dict_form
 
-    conjs = jconj.conjugate(kanji, kana, pos, CT)
+    conjs: Dict[Tuple[int, int, bool, bool, int], str] = jconj.conjugate(
+        kanji, kana, pos, CT
+    )
 
-    entry, ref_map = {}, {}
+    entry: Dict[str, List[str]] = {}
+    ref_map: Dict[Tuple[Union[int, bool], ...], str] = {}
+
     for (_, case, neg, pol, _), v in conjs.items():
         if cases and case not in cases:
             continue
@@ -531,7 +544,7 @@ def all_conjugations_helper(dict_form: str, pos_match: str, cases=None):
     return entry, ref_map
 
 
-def flip_multi_dict(d):
+def flip_multi_dict(d: Dict[K, List[V]]) -> Dict[V, List[K]]:
     result = {}
     for k, vs in d.items():
         for v in vs:
@@ -539,7 +552,7 @@ def flip_multi_dict(d):
     return result
 
 
-def merge_multi_dicts(*ds):
+def merge_multi_dicts(ds: List[Dict[K, List[V]]]) -> Dict[K, List[V]]:
     result = {}
     for d in ds:
         for k, v in d.items():
@@ -549,7 +562,9 @@ def merge_multi_dicts(*ds):
 
 def post_parse(morphemes: List[morpheme.Morpheme]) -> List[MultiMorpheme]:
     n = len(morphemes)
-    dp = [(float("-inf"), None) for _ in range(n)]
+    dp: List[Tuple[float, List[MultiMorpheme]]] = [
+        (float("-inf"), []) for _ in range(n)
+    ]
 
     for i in range(n - 1, -1, -1):
         for j in range(i + 1, n + 1):
@@ -572,12 +587,12 @@ def post_parse(morphemes: List[morpheme.Morpheme]) -> List[MultiMorpheme]:
     return dp[0][1]
 
 
-def parse(text):
+def parse(text: str) -> List[Morpheme]:
     mode = tokenizer.Tokenizer.SplitMode.A
     return list(tokenizer_obj.tokenize(text, mode))
 
 
-def display_part_of_speech(m: MultiMorpheme):
+def display_part_of_speech(m: MultiMorpheme) -> str:
     pos = m.part_of_speech()
     sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
 
@@ -589,7 +604,7 @@ def display_part_of_speech(m: MultiMorpheme):
     return sudachi_pos
 
 
-def translation_assist(text):
+def translation_assist(text: str):
     morphs = post_parse(parse(text))
     print(" ".join(m.surface() for m in morphs))
     print(google(text))
@@ -602,7 +617,7 @@ def translation_assist(text):
         conj = m.detect_conjugation()
         surface = m.surface()
         has_kanji = re.search(kanji_re, surface)
-        reading = jaconv.kata2hira(m.reading_form())
+        reading: Optional[str] = jaconv.kata2hira(m.reading_form())
 
         sudachi_pos = display_part_of_speech(m)
         if sudachi_pos == "blank space":
