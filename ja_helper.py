@@ -156,13 +156,13 @@ class MultiMorpheme(object):
             return True
 
         pos = self.pos_str()
-        if re.fullmatch("[cP]?[rn]+(s|[pjx]*)|n+pns?", pos):
+        if re.fullmatch("[cP]?[rn]+(s+|[pjx]*)|n+pns*", pos):
             return True
         elif re.fullmatch("(v[vpxj]*)+", pos):
             return True
         elif re.fullmatch("x(p|[vx]*)", pos):
             return True
-        elif re.fullmatch("j[jvxp]+s?", pos):
+        elif re.fullmatch("[ja][jvxp]+s?", pos):
             return True
         elif re.fullmatch("p[pj]+", pos):
             return True
