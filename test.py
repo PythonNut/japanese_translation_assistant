@@ -2,7 +2,14 @@ import unittest
 from ja_helper import *
 
 
-class TestStringMethods(unittest.TestCase):
+class TestConjugationRecognition(unittest.TestCase):
+    def test_vx_pol(self):
+        morphs = parse("曲がります")
+        self.assertEqual([m.surface() for m in morphs], ["曲がり", "ます"])
+        M = MultiMorpheme(morphs)
+        self.assertTrue(M.composition_check())
+        self.assertEqual(post_parse(morphs), [M])
+
     def test_verb_progressive(self):
         morphs = parse("思っている")
         self.assertEqual([m.surface() for m in morphs], ["思っ", "て", "いる"])
@@ -23,6 +30,8 @@ class TestStringMethods(unittest.TestCase):
         M = MultiMorpheme(morphs)
         self.assertTrue(M.composition_check())
         self.assertEqual(post_parse(morphs), [M])
+
+
 
 if __name__ == "__main__":
     unittest.main()
