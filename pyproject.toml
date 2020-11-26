@@ -15,6 +15,7 @@ jamdict = "^0.1a6"
 mecab-python3 = "^0.996.5"
 SudachiDict-core = "^20200330"
 SudachiPy = "^0.4.9"
+sudachidict_full = "^20200722"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.13.0"
