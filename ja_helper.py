@@ -263,6 +263,17 @@ class MultiMorpheme(object):
 
         return self.morphemes[-i].part_of_speech()
 
+    def display_part_of_speech(self) -> str:
+        pos = self.part_of_speech()
+        sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
+
+        if sudachi_pos == "noun" and pos[1] == "数詞":
+            return "numeral"
+        elif sudachi_pos == "noun" and pos[1] == "固有名詞":
+            return "proper noun"
+
+        return sudachi_pos
+
     def all_conjugations(self, raw=False) -> Dict[str, List[str]]:
         dform = self.dictionary_form()
         pos = self.part_of_speech()
@@ -592,18 +603,6 @@ def parse(text: str) -> List[Morpheme]:
     return list(tokenizer_obj.tokenize(text, mode))
 
 
-def display_part_of_speech(m: MultiMorpheme) -> str:
-    pos = m.part_of_speech()
-    sudachi_pos = SUDACHI_POS_MAP.get(pos[0], "") or pos[0]
-
-    if sudachi_pos == "noun" and pos[1] == "数詞":
-        return "numeral"
-    elif sudachi_pos == "noun" and pos[1] == "固有名詞":
-        return "proper noun"
-
-    return sudachi_pos
-
-
 def translation_assist(text: str):
     morphs = post_parse(parse(text))
     print(" ".join(m.surface() for m in morphs))
@@ -619,7 +618,7 @@ def translation_assist(text: str):
         has_kanji = re.search(kanji_re, surface)
         reading: Optional[str] = jaconv.kata2hira(m.reading_form())
 
-        sudachi_pos = display_part_of_speech(m)
+        sudachi_pos = m.display_part_of_speech()
         if sudachi_pos == "blank space":
             continue
 
