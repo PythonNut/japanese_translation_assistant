@@ -407,7 +407,7 @@ def search_morpheme(
 
 
 def guess_exact_pos(dict_form: str, pos: SudachiPos) -> Tuple[str, List[str]]:
-    if dict_form in ("だ", "です") and pos[4] in ("助動詞-ダ", "助動詞-デス"):
+    if dict_form in ("だ", "です") and pos[4] in ("助動詞-タ", "助動詞-ダ", "助動詞-デス"):
         return "だ", ["cop-da"]
 
     entries = jmdict_lookup(dict_form).entries

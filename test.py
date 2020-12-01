@@ -10,7 +10,11 @@ class TestConjugationRecognition(unittest.TestCase):
         self.assertTrue(M.composition_check())
         self.assertEqual(post_parse(morphs), [M])
 
-    def test_verb_progressive(self):
+    def test_vx_conditional(self):
+        morphs = parse("飲んだら")
+        self.assertEqual([m.surface() for m in morphs], ["飲ん", "だら"])
+
+    def test_vvv_progressive(self):
         morphs = parse("思っている")
         self.assertEqual([m.surface() for m in morphs], ["思っ", "て", "いる"])
         M = MultiMorpheme(morphs)
@@ -30,7 +34,6 @@ class TestConjugationRecognition(unittest.TestCase):
         M = MultiMorpheme(morphs)
         self.assertTrue(M.composition_check())
         self.assertEqual(post_parse(morphs), [M])
-
 
 
 if __name__ == "__main__":
