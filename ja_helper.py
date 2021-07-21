@@ -645,6 +645,10 @@ def translation_assist(text: str):
             print(f"{surface} particle\n")
             continue
 
+        elif sudachi_pos == "numeral":
+            print(f"{surface} [{reading}] numeral\n")
+            continue
+
         dform_str = ""
         if dform != m.surface():
             dform_str = f" ({dform})"
