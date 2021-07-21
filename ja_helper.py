@@ -1,5 +1,5 @@
 import sys
-from google_trans_new import google_translator
+import googletrans
 import re
 import jaconv
 import romkan
@@ -24,7 +24,7 @@ JMDICT_ABBREV_MAP["expressions (phrases, clauses, etc.)"] = "exp"
 
 tokenizer_obj = dictionary.Dictionary().create()
 jmd = Jamdict()
-google_translate = google_translator()
+google_translate = googletrans.Translator()
 
 SUDACHI_POS_MAP = {
     "感動詞": "interjection",
@@ -80,7 +80,8 @@ alphanum_re = "[\uFF01-\uFF5E]"
 
 def google(text: str):
     try:
-        return google_translate.translate(text, lang_src="ja", lang_tgt="en")
+        return google_translate.translate(text, src="ja", dest="en").text
+
     except Exception as e:
         import traceback
         traceback.print_exc()
