@@ -111,6 +111,9 @@ def guess_verb_class(pos: SudachiPos) -> Optional[VerbClass]:
 
             return VerbClass.GODAN
 
+        elif r in "ta":
+            return
+
     print(f"Unrecognized verb: {pos}")
     return
 
