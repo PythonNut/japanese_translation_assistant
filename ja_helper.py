@@ -79,7 +79,12 @@ alphanum_re = "[\uFF01-\uFF5E]"
 
 
 def google(text: str):
-    return google_translate.translate(text, lang_src="ja", lang_tgt="en")
+    try:
+        return google_translate.translate(text, lang_src="ja", lang_tgt="en")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return "<Google Translate failed!!!>"
 
 
 @functools.lru_cache(maxsize=None)
