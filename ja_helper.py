@@ -148,6 +148,9 @@ class MultiMorpheme(object):
     def __repr__(self) -> str:
         return f"MultiMorpheme({str(self)})"
 
+    def __getitem__(self, i):
+        return self.morphemes[i]
+
     def surface(self) -> str:
         return "".join(m.surface() for m in self.morphemes)
 
