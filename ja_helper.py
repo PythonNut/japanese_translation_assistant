@@ -9,6 +9,7 @@ from typing import Collection, Dict, List, Optional, Tuple, TypeVar, Union
 from sudachipy import dictionary, morpheme
 from sudachipy.morpheme import Morpheme
 import sudachipy.tokenizer as tokenizer
+from fugashi import Tagger
 from dataclasses import dataclass
 from jamdict import Jamdict, jmdict
 from japaneseverbconjugator.src.constants.EnumeratedTypes import VerbClass
@@ -23,6 +24,7 @@ JMDICT_ABBREV_MAP = {v: k for k, vs in CT["kwpos"].items() for v in vs}
 JMDICT_ABBREV_MAP["expressions (phrases, clauses, etc.)"] = "exp"
 
 tokenizer_obj = dictionary.Dictionary().create()
+tagger = Tagger("-Owakati")
 jmd = Jamdict()
 google_translate = googletrans.Translator()
 
@@ -84,6 +86,7 @@ def google(text: str):
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return "<Google Translate failed!!!>"
 
@@ -149,7 +152,32 @@ class MultiMorpheme(object):
         return "".join(m.surface() for m in self.morphemes)
 
     def reading_form(self) -> str:
-        return "".join(m.reading_form() for m in self.morphemes)
+        sudachi_reading = "".join(m.reading_form() for m in self.morphemes)
+
+        surface = self.surface()
+        if re.match(rf"{kata_re}+", surface) and not sudachi_reading:
+            return surface
+
+        sudachi_dict_reading = "".join(
+            m.reading_form() for m in parse(self.dictionary_form())
+        )
+        surface_lForms = [m.feature.lForm for m in fugashi_parse(self.surface())]
+        dict_lForms = [m.feature.lForm for m in fugashi_parse(self.dictionary_form())]
+        fugashi_reading = "".join(surface_lForms) if all(surface_lForms) else ""
+        fugashi_dict_reading = "".join(dict_lForms) if all(dict_lForms) else ""
+        sudachi_lookup = jmdict_lookup(jaconv.kata2hira(sudachi_reading)).entries
+        sudachi_dict_lookup = jmdict_lookup(
+            jaconv.kata2hira(sudachi_dict_reading)
+        ).entries
+        fugashi_dict_lookup = (
+            fugashi_dict_reading
+            and jmdict_lookup(jaconv.kata2hira(fugashi_dict_reading)).entries
+        )
+
+        if not (sudachi_lookup or sudachi_dict_lookup) and fugashi_dict_lookup:
+            return fugashi_reading
+
+        return sudachi_reading
 
     def parts_of_speech(self) -> List[SudachiPos]:
         return [m.part_of_speech() for m in self.morphemes]
@@ -610,6 +638,11 @@ def post_parse(morphemes: List[morpheme.Morpheme]) -> List[MultiMorpheme]:
 def parse(text: str) -> List[Morpheme]:
     mode = tokenizer.Tokenizer.SplitMode.A
     return list(tokenizer_obj.tokenize(text, mode))
+
+
+def fugashi_parse(text: str):
+    p = tagger.parse(text)
+    return tagger(p)
 
 
 def translation_assist(text: str):
